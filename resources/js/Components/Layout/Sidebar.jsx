@@ -3,10 +3,10 @@ import { Link } from '@inertiajs/react';
 
 const items = [
   { key: 'dashboard', label: 'Dashboard', icon: 'bi-grid' , href: '/admin/dashboard'},
-  { key: 'teachers', label: 'Teacher Management', icon: 'bi-person-badge', children: [
-    { key: 'teachers.list', label: 'Teachers List', href: '/admin/teachers' },
-    { key: 'teachers.add', label: 'Add Teacher', href: '/admin/teachers/create' },
-  ]},
+//   { key: 'teachers', label: 'Teacher Management', icon: 'bi-person-badge', children: [
+//     { key: 'teachers.list', label: 'Teachers List', href: '/admin/teachers' },
+//     { key: 'teachers.add', label: 'Add Teacher', href: '/admin/teachers/create' },
+//   ]},
   { key: 'departments', label: 'Department Management', icon: 'bi-building', href: '/admin/departments' },
   { key: 'majors', label: 'Major Management', icon: 'bi-book', href: '/admin/majors' },
   { key: 'subjects', label: 'Subject Management', icon: 'bi-journal-text', href: '/admin/subjects' },

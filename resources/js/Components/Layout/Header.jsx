@@ -2,8 +2,11 @@ import React from 'react';
 import ThemeToggle from './ThemeToggle';
 import MobileMenu from './MobileMenu';
 import { Link } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
+
 
 export default function Header({ onToggle, onMobileToggle }) {
+    const { post } = useForm();
   return (
     <header className="header-modern">
       <div className="header-left">
@@ -41,7 +44,14 @@ export default function Header({ onToggle, onMobileToggle }) {
               <li className="dropdown-header">Account</li>
               <li><Link className="dropdown-item" href="/profile">Profile</Link></li>
               <li><hr className="dropdown-divider" /></li>
-              <li><Link className="dropdown-item" href="/logout">Logout</Link></li>
+              <li>
+                <button
+                    className="dropdown-item"
+                    onClick={() => post(route('logout'))}
+                >
+                    Logout
+                </button>
+              </li>
             </ul>
           </div>
 
