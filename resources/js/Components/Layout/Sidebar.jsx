@@ -3,13 +3,13 @@ import { Link } from '@inertiajs/react';
 
 const items = [
   { key: 'dashboard', label: 'Dashboard', icon: 'bi-grid' , href: '/admin/dashboard'},
-//   { key: 'teachers', label: 'Teacher Management', icon: 'bi-person-badge', children: [
-//     { key: 'teachers.list', label: 'Teachers List', href: '/admin/teachers' },
-//     { key: 'teachers.add', label: 'Add Teacher', href: '/admin/teachers/create' },
-//   ]},
+  { key: 'teachers', label: 'Teacher Management', icon: 'bi-person-badge', href: '/admin/teachers' },
   { key: 'departments', label: 'Department Management', icon: 'bi-building', href: '/admin/departments' },
   { key: 'majors', label: 'Major Management', icon: 'bi-book', href: '/admin/majors' },
+  { key: 'academic-years', label: 'Academic Years', icon: 'bi-calendar3', href: '/admin/academic-years' },
   { key: 'subjects', label: 'Subject Management', icon: 'bi-journal-text', href: '/admin/subjects' },
+  { key: 'curriculum-subjects', label: 'Curriculum', icon: 'bi-diagram-3', href: '/admin/curriculum-subjects' },
+  { key: 'teacher-assignments', label: 'Teacher Assignments', icon: 'bi-clipboard-check', href: '/admin/teacher-assignments' },
   { key: 'timetable', label: 'Timetable Management', icon: 'bi-calendar-event', href: '/admin/timetable' },
   { key: 'announcements', label: 'Announcement Management', icon: 'bi-megaphone', href: '/admin/announcements' },
   { key: 'events', label: 'Event Management', icon: 'bi-calendar2-day', href: '/admin/events' },
@@ -35,7 +35,7 @@ export default function Sidebar({ active = 'dashboard', collapsed, isMobileMenu 
         <div className="logo-container">
           <div className="logo-emoji">🎓</div>
           <div className="logo-text">
-            <div className="logo-title">University AI</div>
+            <div className="logo-title">KTU AI Assistant</div>
             <div className="logo-subtitle">Admin Panel</div>
           </div>
         </div>

@@ -1,20 +1,26 @@
 import { router } from '@inertiajs/react';
 import Modal from './Modal';
 
-export default function DeleteConfirmModal({ show, department, onClose }) {
+export default function DeleteConfirmModal({
+    show,
+    item,
+    routeName,
+    title = 'Delete Record',
+    onClose,
+}) {
     const handleDelete = () => {
-        if (!department) return;
+        if (!item) return;
 
-        router.delete(route('admin.departments.destroy', department.id), {
+        router.delete(route(routeName, item.id), {
             preserveScroll: true,
             onSuccess: () => onClose(),
         });
     };
 
     return (
-        <Modal show={show} onClose={onClose} title="Delete Department">
+        <Modal show={show} onClose={onClose} title={title}>
             <p className="mb-4">
-                Are you sure you want to delete <strong>{department?.name}</strong>? This action
+                Are you sure you want to delete <strong>{item?.name}</strong>? This action
                 cannot be undone.
             </p>
             <div className="d-flex justify-content-end gap-2">
