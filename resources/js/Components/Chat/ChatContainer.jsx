@@ -4,27 +4,122 @@ import TypingIndicator from './TypingIndicator';
 import WelcomeScreen from './WelcomeScreen';
 import MessageInput from './MessageInput';
 import ScrollToBottomButton from './ScrollToBottomButton';
-import { initialMessages, nextId, streamAssistantReply } from './mockApi';
+import ConversationSidebar from './ConversationSidebar';
+import {
+    initialMessages,
+    nextId,
+    resetConversation,
+    streamAssistantReply,
+    getCurrentConversationId,
+    bindCurrentConversationId,
+    fetchConversations,
+    loadConversation,
+    renameConversation,
+    deleteConversation,
+} from './mockApi';
 
 const NEAR_BOTTOM_PX = 120;
+const MOBILE_BREAKPOINT = 992;
 
 /**
- * Orchestrates conversation state, the mock streaming reply, near-bottom
- * auto-scroll, and inline error + retry.
+ * Orchestrates:
+ *  - the transcript state for the active conversation,
+ *  - the sidebar (list of conversations, switching, rename, delete),
+ *  - streamed replies, auto-scroll, and inline error + retry.
+ *
+ * The container also computes whether the viewport is "mobile" (< 992px)
+ * because the sidebar's behaviour differs between desktop (always visible,
+ * collapsible) and mobile (off-canvas drawer with backdrop).
  */
-export default function ChatContainer({ registerNewChat }) {
+export default function ChatContainer({ registerNewChat, registerToggleSidebar }) {
+    /* ---------- transcript state ---------- */
     const [messages, setMessages] = useState(initialMessages);
     const [draft, setDraft] = useState('');
     const [isResponding, setIsResponding] = useState(false);
     const [error, setError] = useState(null);
     const [showJump, setShowJump] = useState(false);
 
+    /* ---------- sidebar state ---------- */
+    const [conversations, setConversations] = useState([]);
+    const [activeId, setActiveId] = useState(() => getCurrentConversationId());
+    const [loadingList, setLoadingList] = useState(true);
+    const [isMobile, setIsMobile] = useState(() =>
+        typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT,
+    );
+    const [sidebarOpen, setSidebarOpen] = useState(() =>
+        typeof window !== 'undefined' && window.innerWidth >= MOBILE_BREAKPOINT,
+    );
+
     const mainRef = useRef(null);
     const nearBottomRef = useRef(true);
     const lastUserTextRef = useRef('');
     const streamControllerRef = useRef(null);
 
-    /* ---------- scroll helpers ---------- */
+    /* -----------------------------------------------------------------
+     |  Layout: track mobile breakpoint
+     |----------------------------------------------------------------- */
+    useEffect(() => {
+        const onResize = () => {
+            const mobile = window.innerWidth < MOBILE_BREAKPOINT;
+            setIsMobile((prev) => {
+                if (prev !== mobile) {
+                    // When flipping between mobile / desktop, restore a sensible
+                    // default: closed on mobile, open on desktop.
+                    setSidebarOpen(!mobile);
+                }
+                return mobile;
+            });
+        };
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    /* -----------------------------------------------------------------
+     |  Sidebar: load list on mount + expose refresh
+     |----------------------------------------------------------------- */
+    const refreshList = useCallback(async () => {
+        try {
+            const list = await fetchConversations();
+            setConversations(list);
+        } catch {
+            /* silent — the sidebar just stays empty on failure */
+        } finally {
+            setLoadingList(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        refreshList();
+    }, [refreshList]);
+
+    // On initial mount, if we already have a bound conversation id from
+    // localStorage, hydrate its messages so refresh doesn't lose context.
+    useEffect(() => {
+        const bound = getCurrentConversationId();
+        if (!bound) return;
+        (async () => {
+            try {
+                const data = await loadConversation(bound);
+                setActiveId(data.id);
+                setMessages(
+                    (data.messages || []).map((m) => ({
+                        id: `srv_${m.id}`,
+                        role: m.role,
+                        content: m.content,
+                        createdAt: new Date(m.createdAt),
+                    })),
+                );
+            } catch {
+                // 403 / 404 — the conversation no longer belongs to us.
+                resetConversation();
+                setActiveId(null);
+            }
+        })();
+    }, []);
+
+    /* -----------------------------------------------------------------
+     |  Scroll helpers
+     |----------------------------------------------------------------- */
     const scrollToBottom = useCallback((behavior = 'smooth') => {
         const el = mainRef.current;
         if (el) el.scrollTo({ top: el.scrollHeight, behavior });
@@ -39,14 +134,15 @@ export default function ChatContainer({ registerNewChat }) {
         setShowJump(!near && (messages.length > 0 || isResponding));
     }, [messages.length, isResponding]);
 
-    // Auto-scroll on new content only if the user is already near the bottom.
     useEffect(() => {
         if (nearBottomRef.current) scrollToBottom('smooth');
     }, [messages, isResponding, scrollToBottom]);
 
-    /* ---------- sending ---------- */
+    /* -----------------------------------------------------------------
+     |  Sending a new message
+     |----------------------------------------------------------------- */
     const runAssistant = useCallback(
-        (userText, { forceError = false } = {}) => {
+        (userText) => {
             streamControllerRef.current?.abort();
 
             setError(null);
@@ -60,8 +156,6 @@ export default function ChatContainer({ registerNewChat }) {
             streamAssistantReply(
                 userText,
                 (partial) => {
-                    // On the first chunk, replace the typing indicator with a
-                    // real (growing) message bubble.
                     if (!started) {
                         started = true;
                         setMessages((prev) => [
@@ -76,13 +170,18 @@ export default function ChatContainer({ registerNewChat }) {
                         );
                     }
                 },
-                { forceError, signal: controller.signal },
+                { signal: controller.signal },
             )
                 .then(() => {
                     if (streamControllerRef.current === controller) {
                         streamControllerRef.current = null;
                     }
                     setIsResponding(false);
+                    // Backend may have assigned a fresh conversation id — sync it.
+                    const bound = getCurrentConversationId();
+                    if (bound && bound !== activeId) setActiveId(bound);
+                    // Refresh the sidebar list so a new thread appears + titles update.
+                    refreshList();
                 })
                 .catch((err) => {
                     if (err?.name === 'AbortError') return;
@@ -90,10 +189,10 @@ export default function ChatContainer({ registerNewChat }) {
                         streamControllerRef.current = null;
                     }
                     setIsResponding(false);
-                    setError('Unable to connect. Please try again.');
+                    setError(err?.message || 'Unable to connect. Please try again.');
                 });
         },
-        [],
+        [activeId, refreshList],
     );
 
     const sendMessage = useCallback(
@@ -102,7 +201,7 @@ export default function ChatContainer({ registerNewChat }) {
             if (!content || isResponding) return;
 
             lastUserTextRef.current = content;
-            nearBottomRef.current = true; // sending always jumps us to the latest
+            nearBottomRef.current = true;
 
             setMessages((prev) => [
                 ...prev,
@@ -118,10 +217,68 @@ export default function ChatContainer({ registerNewChat }) {
         if (lastUserTextRef.current) runAssistant(lastUserTextRef.current);
     }, [runAssistant]);
 
-    /* ---------- new chat ---------- */
+    /* -----------------------------------------------------------------
+     |  Sidebar actions
+     |----------------------------------------------------------------- */
+    const switchConversation = useCallback(async (id) => {
+        streamControllerRef.current?.abort();
+        streamControllerRef.current = null;
+        setError(null);
+        setIsResponding(false);
+        setActiveId(id);
+        bindCurrentConversationId(id);
+
+        try {
+            const data = await loadConversation(id);
+            setMessages(
+                (data.messages || []).map((m) => ({
+                    id: `srv_${m.id}`,
+                    role: m.role,
+                    content: m.content,
+                    createdAt: new Date(m.createdAt),
+                })),
+            );
+            nearBottomRef.current = true;
+        } catch {
+            setMessages([]);
+            setError('Unable to load this conversation.');
+        }
+    }, []);
+
+    const handleRename = useCallback(async (id, title) => {
+        // Optimistic update: reflect immediately, sync in the background.
+        setConversations((prev) =>
+            prev.map((c) => (c.id === id ? { ...c, title } : c)),
+        );
+        try {
+            await renameConversation(id, title);
+        } catch {
+            refreshList();
+        }
+    }, [refreshList]);
+
+    const handleDelete = useCallback(async (id) => {
+        setConversations((prev) => prev.filter((c) => c.id !== id));
+        try {
+            await deleteConversation(id);
+        } catch {
+            refreshList();
+        }
+        if (id === activeId) {
+            resetConversation();
+            setActiveId(null);
+            setMessages([]);
+        }
+    }, [activeId, refreshList]);
+
+    /* -----------------------------------------------------------------
+     |  New Chat + navbar wiring
+     |----------------------------------------------------------------- */
     const newChat = useCallback(() => {
         streamControllerRef.current?.abort();
         streamControllerRef.current = null;
+        resetConversation();
+        setActiveId(null);
         setMessages([]);
         setDraft('');
         setError(null);
@@ -130,10 +287,14 @@ export default function ChatContainer({ registerNewChat }) {
         nearBottomRef.current = true;
     }, []);
 
-    // Expose "New Chat" to the parent (so the navbar button can trigger it).
     useEffect(() => {
         registerNewChat?.(newChat);
     }, [registerNewChat, newChat]);
+
+    const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
+    useEffect(() => {
+        registerToggleSidebar?.(toggleSidebar);
+    }, [registerToggleSidebar, toggleSidebar]);
 
     useEffect(() => {
         return () => streamControllerRef.current?.abort();
@@ -143,6 +304,19 @@ export default function ChatContainer({ registerNewChat }) {
 
     return (
         <>
+            <ConversationSidebar
+                conversations={conversations}
+                activeId={activeId}
+                isOpen={sidebarOpen}
+                isMobile={isMobile}
+                loading={loadingList}
+                onSelect={switchConversation}
+                onNewChat={newChat}
+                onRename={handleRename}
+                onDelete={handleDelete}
+                onCloseMobile={() => setSidebarOpen(false)}
+            />
+
             <main
                 className="chat-main"
                 ref={mainRef}
@@ -158,7 +332,6 @@ export default function ChatContainer({ registerNewChat }) {
                                 <ChatMessage key={m.id} message={m} />
                             ))}
 
-                            {/* Typing indicator only before the first streamed chunk */}
                             {isResponding &&
                                 messages[messages.length - 1]?.role !== 'ai' && (
                                     <TypingIndicator />

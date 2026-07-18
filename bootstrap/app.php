@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Services\Chat\Exceptions\ChatException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,6 +21,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Domain-level chat failures (missing API key, upstream provider
+        // timeout, malformed AI response, etc.) always render as a friendly
+        // 502 JSON message the frontend can display verbatim — no matter
+        // where in the call chain they were thrown.
+        $exceptions->render(function (ChatException $e, Request $request) {
+            if ($request->is('chat/*') || $request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 502);
+            }
+        });
+
         $exceptions->respond(function ($response, Throwable $exception, Request $request) {
             $status = $response->getStatusCode();
 

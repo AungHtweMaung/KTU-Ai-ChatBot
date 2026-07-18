@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\RegistrationFeeController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\TeacherAssignmentController;
 use App\Http\Controllers\Admin\TeacherController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -24,9 +26,17 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Chat UI is intentionally public so guest visitors can hold a conversation
+// (identified by a UUID stored in localStorage). Authenticated users are
+// automatically linked to their account via $request->user().
 Route::get('/chat', function () {
     return Inertia::render('Chat/Index');
-})->middleware('auth')->name('chat');
+})->name('chat');
+Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
+Route::get('/chat/conversations', [ConversationController::class, 'index'])->name('chat.conversations.index');
+Route::get('/chat/conversations/{conversation}', [ConversationController::class, 'show'])->name('chat.conversations.show');
+Route::patch('/chat/conversations/{conversation}', [ConversationController::class, 'update'])->name('chat.conversations.update');
+Route::delete('/chat/conversations/{conversation}', [ConversationController::class, 'destroy'])->name('chat.conversations.destroy');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
