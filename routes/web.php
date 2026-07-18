@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Admin\CurriculumSubjectController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\EventController;
+use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\MajorController;
 use App\Http\Controllers\Admin\MajorYearController;
+use App\Http\Controllers\Admin\RegistrationFeeController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\TeacherAssignmentController;
 use App\Http\Controllers\Admin\TeacherController;
@@ -20,6 +23,10 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/chat', function () {
+    return Inertia::render('Chat/Index');
+})->middleware('auth')->name('chat');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -74,6 +81,20 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'store', 'update', 'destroy'])
         ->parameters(['teacher-assignments' => 'teacher_assignment'])
         ->names('admin.teacher-assignments');
+
+    Route::resource('admin/faqs', FaqController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['faqs' => 'faq'])
+        ->names('admin.faqs');
+
+    Route::resource('admin/events', EventController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->names('admin.events');
+
+    Route::resource('admin/fees', RegistrationFeeController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['fees' => 'fee'])
+        ->names('admin.fees');
 });
 
 require __DIR__.'/auth.php';
