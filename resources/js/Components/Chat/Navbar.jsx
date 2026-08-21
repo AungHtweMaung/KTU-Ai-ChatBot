@@ -5,7 +5,7 @@ import { Link, useForm } from '@inertiajs/react';
  *  Left:  university logo + "KTU Assistant"
  *  Right: New Chat button + user avatar dropdown (Profile / Logout)
  */
-export default function Navbar({ onNewChat }) {
+export default function Navbar({ onNewChat, onToggleSidebar }) {
     const { post } = useForm();
 
     const logout = () => post(route('logout'));
@@ -13,13 +13,25 @@ export default function Navbar({ onNewChat }) {
     return (
         <header className="chat-navbar">
             <div className="container-fluid px-3 d-flex align-items-center justify-content-between">
-                {/* Left: brand */}
-                <Link href="/" className="d-flex align-items-center gap-2">
-                    <span className="brand-logo" aria-hidden="true">
-                        <i className="bi bi-stars"></i>
-                    </span>
-                    <span className="brand-name">KTU Assistant</span>
-                </Link>
+                {/* Left: sidebar toggle + brand */}
+                <div className="d-flex align-items-center gap-2">
+                    <button
+                        type="button"
+                        className="chat-icon-btn"
+                        onClick={onToggleSidebar}
+                        aria-label="Toggle conversation history"
+                        title="Conversations"
+                    >
+                        <i className="bi bi-layout-sidebar" aria-hidden="true"></i>
+                    </button>
+
+                    <Link href="/" className="d-flex align-items-center gap-2">
+                        <span className="brand-logo" aria-hidden="true">
+                            <i className="bi bi-stars"></i>
+                        </span>
+                        <span className="brand-name d-none d-sm-inline">KTU Assistant</span>
+                    </Link>
+                </div>
 
                 {/* Right: actions */}
                 <div className="d-flex align-items-center gap-2">

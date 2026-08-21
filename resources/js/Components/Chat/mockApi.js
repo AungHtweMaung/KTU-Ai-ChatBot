@@ -1,163 +1,227 @@
 /**
- * Mock API layer for the chat UI.
+ * Chat API + client-side transcript animation.
  *
- * These are placeholder functions that emulate a backend so the frontend can
- * be built and demoed without APIs. When the Laravel backend is ready, replace
- * the bodies of `streamAssistantReply` (and optionally `initialMessages`) with
- * real HTTP / SSE calls — the component contract stays the same, so no
- * refactoring of the UI components is required.
+ * The public shape (`initialMessages`, `nextId`, `streamAssistantReply`) is
+ * unchanged from the earlier mock implementation, so ChatContainer needs no
+ * modification. Two things are different under the hood:
+ *
+ * 1. `streamAssistantReply` now POSTs to `/chat/send` and gets a real answer
+ *    from Laravel → ChatService → OpenAI/Gemini.
+ * 2. Once the answer arrives, we still animate it word-by-word into the
+ *    UI so it feels like streaming. Genuine SSE streaming can be added
+ *    later without touching the components.
  */
+
+import axios from 'axios';
 
 let idCounter = 0;
 export const nextId = () => `m_${Date.now()}_${idCounter++}`;
 
-/**
- * Optional seed conversation. Return [] to start on the welcome screen.
- */
 export const initialMessages = [];
 
-/**
- * Canned Markdown replies keyed by simple keyword matching, so the demo feels
- * realistic. A real backend would replace this entirely.
+/* ---------------- conversation identity ----------------
+ *
+ * `conversationId` is remembered client-side once the backend assigns one,
+ * so subsequent messages stay in the same thread. A stable `guestUuid` in
+ * localStorage lets an anonymous browser hold a persistent conversation
+ * across refreshes. When the visitor is authenticated, the backend links
+ * the conversation to their user account instead.
  */
-const CANNED = [
-    {
-        match: /regist/i,
-        reply: `Registration for the **2026–2027** academic year runs:
 
-| Stage | Dates |
-| --- | --- |
-| Early registration | **Aug 10 – Aug 20** |
-| Regular registration | Aug 21 – Sep 5 |
-| Late registration | Sep 6 – Sep 12 *(late fee applies)* |
+const GUEST_KEY = 'ktu_chat_guest_uuid';
+const CONVO_KEY = 'ktu_chat_conversation_id';
 
-You can register online through the [student portal](https://portal.ktu.edu).`,
-    },
-    {
-        match: /timetable|schedule|class/i,
-        reply: `Here is a sample of **today's timetable** for *First Year Computer Science*:
-
-- **09:00 – 10:30** — Database Systems (Room B-201)
-- **10:45 – 12:15** — Web Development (Lab 3)
-- **13:30 – 15:00** — Discrete Mathematics (Room A-105)
-
-Would you like the full week's schedule?`,
-    },
-    {
-        match: /fee|tuition|cost|scholarship/i,
-        reply: `### Tuition & Fees (per year)
-
-| Program | Tuition | Registration |
-| --- | ---: | ---: |
-| Computer Science | 1,200,000 MMK | 150,000 MMK |
-| Information Technology | 1,100,000 MMK | 180,000 MMK |
-| Civil Engineering | 1,000,000 MMK | 150,000 MMK |
-
-> Scholarships covering up to **50%** of tuition are available for students with a GPA above 3.5.`,
-    },
-    {
-        match: /head|teacher|who teaches|professor|dr\.?/i,
-        reply: `The **Head of the Computer Science Department** is **Dr. Aung Kyaw**.
-
-He also teaches:
-
-1. Database Systems
-2. Advanced Algorithms
-
-You can reach the department office at \`cs.office@ktu.edu\`.`,
-    },
-    {
-        match: /department|major/i,
-        reply: `KTU currently offers these departments:
-
-- 🖥️ **Computer Science**
-- 🌐 **Information Technology**
-- 🏗️ **Civil Engineering**
-- ⚡ **Electrical Engineering**
-
-Ask me about any of them for majors, subjects, or teachers.`,
-    },
-    {
-        match: /announce|event|news/i,
-        reply: `**Latest announcements:**
-
-- 📢 Midterm examination registration opens **next Monday**.
-- 🎉 The Annual Tech Fair is scheduled for **September 15** in the Main Auditorium.
-
-Want details on any of these?`,
-    },
-];
-
-const DEFAULT_REPLY = `I'm the **KTU Assistant** 🤖 — a demo running on mock data.
-
-I can help with:
-
-- Admissions & Registration
-- Timetables & Departments
-- Teachers, Events & Announcements
-- Fees & Scholarships
-
-Try one of the example questions, or ask me anything about KTU.`;
-
-function pickReply(userText) {
-    const hit = CANNED.find((c) => c.match.test(userText));
-    return hit ? hit.reply : DEFAULT_REPLY;
+function ensureGuestUuid() {
+    try {
+        let uuid = localStorage.getItem(GUEST_KEY);
+        if (!uuid) {
+            uuid = window.crypto?.randomUUID?.() ?? fallbackUuid();
+            localStorage.setItem(GUEST_KEY, uuid);
+        }
+        return uuid;
+    } catch {
+        return null;
+    }
 }
 
+function fallbackUuid() {
+    // RFC4122-style v4 uuid — used only when crypto.randomUUID is unavailable.
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
+
+function getConversationId() {
+    try {
+        const v = localStorage.getItem(CONVO_KEY);
+        return v ? Number(v) : null;
+    } catch {
+        return null;
+    }
+}
+
+function setConversationId(id) {
+    try {
+        localStorage.setItem(CONVO_KEY, String(id));
+    } catch {
+        /* ignore */
+    }
+}
+
+/** Wipe the current conversation binding (called by "New Chat"). */
+export function resetConversation() {
+    try {
+        localStorage.removeItem(CONVO_KEY);
+    } catch {
+        /* ignore */
+    }
+}
+
+/** Public accessors used by the sidebar. */
+export function getCurrentConversationId() {
+    return getConversationId();
+}
+
+export function bindCurrentConversationId(id) {
+    setConversationId(id);
+}
+
+/* ---------------- conversation list / CRUD ---------------- */
+
+/** GET /chat/conversations — list threads for this browser/user. */
+export function fetchConversations() {
+    return axios
+        .get('/chat/conversations', {
+            params: { guest_uuid: ensureGuestUuid() },
+            headers: { Accept: 'application/json' },
+        })
+        .then((r) => r.data?.data ?? []);
+}
+
+/** GET /chat/conversations/{id} — full transcript for one thread. */
+export function loadConversation(id) {
+    return axios
+        .get(`/chat/conversations/${id}`, {
+            params: { guest_uuid: ensureGuestUuid() },
+            headers: { Accept: 'application/json' },
+        })
+        .then((r) => r.data ?? { id, title: null, messages: [] });
+}
+
+/** PATCH — rename. */
+export function renameConversation(id, title) {
+    return axios
+        .patch(
+            `/chat/conversations/${id}`,
+            { title, guest_uuid: ensureGuestUuid() },
+            { headers: { Accept: 'application/json' } },
+        )
+        .then((r) => r.data);
+}
+
+/** DELETE — remove thread (and its messages via cascade). */
+export function deleteConversation(id) {
+    return axios.delete(`/chat/conversations/${id}`, {
+        params: { guest_uuid: ensureGuestUuid() },
+        headers: { Accept: 'application/json' },
+    });
+}
+
+/* ---------------- streaming ---------------- */
+
+// Word-by-word animation cadence (ms). Cheap way to make a non-streamed
+// response feel alive.
+const STREAM_TICK_MS = 22;
+
 /**
- * Emulates a streaming assistant reply.
+ * Send the user's message to the backend and animate the reply.
  *
- * @param {string} userText          The user's message.
- * @param {(chunk:string)=>void} onChunk  Called with the cumulative text so far.
+ * @param {string} userText
+ * @param {(cumulative:string)=>void} onChunk
  * @param {object} [opts]
- * @param {AbortSignal} [opts.signal] Optional abort signal.
- * @param {boolean} [opts.forceError] Force a failure (used by the demo).
- * @returns {Promise<string>} Resolves with the full text once complete.
- *
- * TODO(backend): replace with a fetch to POST /api/chat that streams tokens
- * (SSE or chunked). Keep the (userText, onChunk) contract.
+ * @param {AbortSignal} [opts.signal]
+ * @returns {Promise<string>}
  */
 export function streamAssistantReply(userText, onChunk, opts = {}) {
-    const { signal, forceError = false } = opts;
+    const { signal } = opts;
 
     return new Promise((resolve, reject) => {
-        // Simulate initial network / "thinking" latency.
-        const thinkDelay = 500 + Math.random() * 500;
-
-        const startTimer = setTimeout(() => {
-            if (forceError) {
-                reject(new Error('Network error'));
+        const controller = new AbortController();
+        if (signal) {
+            if (signal.aborted) {
+                reject(new DOMException('Aborted', 'AbortError'));
                 return;
             }
+            signal.addEventListener('abort', () => controller.abort());
+        }
 
-            const full = pickReply(userText);
-            // Stream word-by-word for a natural typing effect.
-            const tokens = full.split(/(\s+)/);
-            let i = 0;
-            let acc = '';
+        const payload = {
+            message: userText,
+            conversation_id: getConversationId(),
+            guest_uuid: ensureGuestUuid(),
+        };
 
-            const tick = () => {
-                if (signal?.aborted) {
-                    clearInterval(streamTimer);
+        axios
+            .post('/chat/send', payload, {
+                signal: controller.signal,
+                headers: { Accept: 'application/json' },
+            })
+            .then((response) => {
+                const data = response.data ?? {};
+
+                if (data.conversation_id) {
+                    setConversationId(data.conversation_id);
+                }
+
+                const fullText = String(data.assistant_message?.content ?? '');
+                if (fullText === '') {
+                    // Should not happen — the backend guarantees a response —
+                    // but guard so the UI doesn't get stuck.
+                    onChunk('');
+                    resolve('');
+                    return;
+                }
+
+                animateText(fullText, onChunk, controller.signal)
+                    .then(() => resolve(fullText))
+                    .catch(reject);
+            })
+            .catch((err) => {
+                if (axios.isCancel?.(err) || err?.code === 'ERR_CANCELED') {
                     reject(new DOMException('Aborted', 'AbortError'));
                     return;
                 }
-                acc += tokens[i];
-                onChunk(acc);
-                i++;
-                if (i >= tokens.length) {
-                    clearInterval(streamTimer);
-                    resolve(full);
-                }
-            };
+                // Surface the friendly message from Laravel when available.
+                const msg = err?.response?.data?.message;
+                reject(new Error(msg || 'Network error'));
+            });
+    });
+}
 
-            const streamTimer = setInterval(tick, 28);
-        }, thinkDelay);
+/**
+ * Feed `full` into `onChunk` word-by-word so the UI renders a smooth
+ * streaming-like transcript. Aborts cleanly if the signal fires.
+ */
+function animateText(full, onChunk, signal) {
+    return new Promise((resolve, reject) => {
+        const tokens = full.split(/(\s+)/); // keep whitespace tokens
+        let i = 0;
+        let acc = '';
 
-        // Allow cancellation during the think phase too.
-        signal?.addEventListener('abort', () => {
-            clearTimeout(startTimer);
-            reject(new DOMException('Aborted', 'AbortError'));
-        });
+        const timer = setInterval(() => {
+            if (signal?.aborted) {
+                clearInterval(timer);
+                reject(new DOMException('Aborted', 'AbortError'));
+                return;
+            }
+            acc += tokens[i++];
+            onChunk(acc);
+            if (i >= tokens.length) {
+                clearInterval(timer);
+                resolve();
+            }
+        }, STREAM_TICK_MS);
     });
 }
