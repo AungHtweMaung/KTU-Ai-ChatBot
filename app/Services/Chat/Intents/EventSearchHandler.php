@@ -41,7 +41,9 @@ class EventSearchHandler implements IntentHandler
             $query->where('starts_at', '<=', $to);
         }
 
-        return $query->limit(15)->get()->map(fn (Event $e) => [
+        $total = (clone $query)->count();
+
+        $items = $query->limit(15)->get()->map(fn (Event $e) => [
             'title' => $e->title,
             'type' => $e->type,
             'location' => $e->location,
@@ -49,6 +51,11 @@ class EventSearchHandler implements IntentHandler
             'ends_at' => optional($e->ends_at)->toDateTimeString(),
             'description' => $e->description,
         ])->all();
+
+        return [
+            'total_count' => $total,
+            'items' => $items,
+        ];
     }
 
     /**

@@ -30,10 +30,17 @@ class FaqSearchHandler implements IntentHandler
                 ->orWhere('category', 'like', "%{$query}%"));
         }
 
-        return $builder->limit(10)->get()->map(fn (Faq $f) => [
+        $total = (clone $builder)->count();
+
+        $items = $builder->limit(10)->get()->map(fn (Faq $f) => [
             'category' => $f->category,
             'question' => $f->question,
             'answer' => $f->answer,
         ])->all();
+
+        return [
+            'total_count' => $total,
+            'items' => $items,
+        ];
     }
 }

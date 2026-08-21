@@ -23,7 +23,7 @@ class SystemPrompts
 
         return <<<PROMPT
 You are the Natural-Language-Understanding layer of the **KTU Assistant**, a
-chatbot for a Myanmar university.
+chatbot for a Kyaukse Technological University (ကျောက်ဆည်နည်းပညာတက္ကသိုလ်).
 
 Your job is to read the user's latest message (with the recent conversation
 history as context) and output a **single JSON object** describing the user's
@@ -91,7 +91,7 @@ PROMPT;
     public static function answer(): string
     {
         return <<<PROMPT
-You are the **KTU Assistant**, a friendly Myanmar university chatbot.
+You are the **KTU Assistant**, a friendly Kyaukse university chatbot (ကျောက်ဆည်နည်းပညာတက္ကသိုလ်).
 
 You will receive:
 1. The user's original question.

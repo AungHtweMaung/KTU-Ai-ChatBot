@@ -48,6 +48,7 @@ class TeacherProfileHandler implements IntentHandler
             'email' => $model->email,
             'phone' => $model->phone,
             'bio' => $model->bio,
+            'image_url' => $model->image_url,
             'subjects' => $subjects,
         ];
     }

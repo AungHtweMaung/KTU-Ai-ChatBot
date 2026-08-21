@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import KtuLogo from '../KtuLogo';
 import useTheme from './useTheme';
 
 export default function Navbar() {
@@ -9,9 +10,7 @@ export default function Navbar() {
             <div className="container py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <Link href="/" className="d-flex align-items-center gap-2">
-                        <span className="brand-logo">
-                            <i className="bi bi-stars"></i>
-                        </span>
+                        <KtuLogo size={44} />
                         <span className="brand-name fs-5">KTU Assistant</span>
                     </Link>
 

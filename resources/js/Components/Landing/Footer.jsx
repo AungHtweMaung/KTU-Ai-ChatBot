@@ -1,3 +1,5 @@
+import KtuLogo from '../KtuLogo';
+
 export default function Footer() {
     return (
         <footer className="landing-footer">
@@ -5,9 +7,7 @@ export default function Footer() {
                 <div className="row g-4 align-items-center">
                     <div className="col-md-6">
                         <div className="d-flex align-items-center gap-2 mb-2">
-                            <span className="brand-logo" style={{ width: 36, height: 36, fontSize: '1.1rem' }}>
-                                <i className="bi bi-stars"></i>
-                            </span>
+                            <KtuLogo size={36} />
                             <span className="brand-name fs-6">KTU Assistant</span>
                         </div>
                         <p className="text-muted-soft mb-0" style={{ fontSize: '0.9rem' }}>

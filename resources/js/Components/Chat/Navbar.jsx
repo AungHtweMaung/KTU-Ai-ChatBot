@@ -1,4 +1,5 @@
 import { Link, useForm } from '@inertiajs/react';
+import KtuLogo from '../KtuLogo';
 
 /**
  * Fixed top navigation for the chat page.
@@ -26,19 +27,17 @@ export default function Navbar({ onNewChat, onToggleSidebar }) {
                     </button>
 
                     <Link href="/" className="d-flex align-items-center gap-2">
-                        <span className="brand-logo" aria-hidden="true">
-                            <i className="bi bi-stars"></i>
-                        </span>
+                        <KtuLogo size={38} />
                         <span className="brand-name d-none d-sm-inline">KTU Assistant</span>
                     </Link>
                 </div>
 
                 {/* Right: actions */}
                 <div className="d-flex align-items-center gap-2">
-                    <button type="button" className="chat-btn" onClick={onNewChat}>
+                    {/* <button type="button" className="chat-btn" onClick={onNewChat}>
                         <i className="bi bi-plus-lg" aria-hidden="true"></i>
                         <span className="d-none d-sm-inline">New Chat</span>
-                    </button>
+                    </button> */}
 
                     <div className="dropdown">
                         <button
