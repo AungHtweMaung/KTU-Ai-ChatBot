@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\Chat\Contracts\AiProvider;
 use App\Services\Chat\Exceptions\ChatException;
 use App\Services\Chat\Providers\GeminiService;
+use App\Services\Chat\Providers\GroqService;
 use App\Services\Chat\Providers\OpenAiService;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
             return match (config('chat.provider')) {
                 'openai' => new OpenAiService(),
                 'gemini' => new GeminiService(),
+                'groq' => new GroqService(),
                 default => throw ChatException::providerNotConfigured((string) config('chat.provider')),
             };
         });

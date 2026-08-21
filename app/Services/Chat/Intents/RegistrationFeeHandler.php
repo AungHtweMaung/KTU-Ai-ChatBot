@@ -34,12 +34,19 @@ class RegistrationFeeHandler implements IntentHandler
             $query->where('name', 'like', "%{$feeType}%");
         }
 
-        return $query->limit(20)->get()->map(fn (RegistrationFee $f) => [
+        $total = (clone $query)->count();
+
+        $items = $query->limit(20)->get()->map(fn (RegistrationFee $f) => [
             'name' => $f->name,
             'major' => $f->major?->name ?? 'All majors',
             'amount' => (float) $f->amount,
             'currency' => 'MMK',
             'description' => $f->description,
         ])->all();
+
+        return [
+            'total_count' => $total,
+            'items' => $items,
+        ];
     }
 }

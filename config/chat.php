@@ -6,7 +6,7 @@ return [
     |--------------------------------------------------------------------------
     | Active AI provider
     |--------------------------------------------------------------------------
-    | Which AiProvider implementation to bind. Supported: "openai", "gemini".
+    | Which AiProvider implementation to bind. Supported: "openai", "gemini", "groq".
     | Change via CHAT_PROVIDER in .env — no code changes required.
     */
     'provider' => env('CHAT_PROVIDER', 'openai'),
@@ -26,6 +26,11 @@ return [
             'api_key' => env('GEMINI_API_KEY'),
             'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
             'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+        ],
+        'groq' => [
+            'api_key' => env('GROQ_API_KEY'),
+            'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+            'model' => env('GROQ_MODEL', 'llama-3.1-8b-instant'),
         ],
     ],
 

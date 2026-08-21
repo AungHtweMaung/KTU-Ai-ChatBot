@@ -33,7 +33,13 @@ export default function Sidebar({ active = 'dashboard', collapsed, isMobileMenu 
     <aside className={sidebarClass} style={{width: 260}}>
       <div className="sidebar-header">
         <div className="logo-container">
-          <div className="logo-emoji">🎓</div>
+          <img
+            src="/images/ktu-logo.png"
+            alt="KTU"
+            width={44}
+            height={44}
+            style={{ objectFit: 'contain' }}
+          />
           <div className="logo-text">
             <div className="logo-title">KTU AI Assistant</div>
             <div className="logo-subtitle">Admin Panel</div>

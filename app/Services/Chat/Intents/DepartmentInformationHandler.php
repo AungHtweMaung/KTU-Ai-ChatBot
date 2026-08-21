@@ -19,7 +19,7 @@ class DepartmentInformationHandler implements IntentHandler
     {
         $department = trim((string) ($filters['department'] ?? ''));
 
-        $query = Department::query()->with('majors:id,department_id,name');
+        $query = Department::query();
 
         if ($department !== '') {
             $query->where(fn ($q) => $q
@@ -27,11 +27,22 @@ class DepartmentInformationHandler implements IntentHandler
                 ->orWhere('code', 'like', "%{$department}%"));
         }
 
-        return $query->limit(10)->get()->map(fn (Department $d) => [
-            'name' => $d->name,
-            'code' => $d->code,
-            'description' => $d->description,
-            'majors' => $d->majors->pluck('name')->all(),
-        ])->all();
+        $total = (clone $query)->count();
+
+        $items = $query
+            ->with('majors:id,department_id,name')
+            ->limit(10)
+            ->get()
+            ->map(fn (Department $d) => [
+                'name' => $d->name,
+                'code' => $d->code,
+                'description' => $d->description,
+                'majors' => $d->majors->pluck('name')->all(),
+            ])->all();
+
+        return [
+            'total_count' => $total,
+            'items' => $items,
+        ];
     }
 }

@@ -21,6 +21,19 @@ export default function MessageBubble({ role, content }) {
                             a: ({ node, ...props }) => (
                                 <a target="_blank" rel="noopener noreferrer" {...props} />
                             ),
+                            // Render images with responsive styling.
+                            img: ({ node, ...props }) => (
+                                <img
+                                    {...props}
+                                    style={{
+                                        maxWidth: '100%',
+                                        height: 'auto',
+                                        borderRadius: '0.375rem',
+                                        marginTop: '0.5rem',
+                                        marginBottom: '0.5rem',
+                                    }}
+                                />
+                            ),
                             // Wrap tables so they can scroll horizontally on mobile.
                             table: ({ node, ...props }) => (
                                 <div className="table-wrap">

@@ -22,7 +22,7 @@ class TeacherSearchHandler implements IntentHandler
         $teacher = trim((string) ($filters['teacher'] ?? ''));
         $department = trim((string) ($filters['department'] ?? ''));
 
-        $query = Teacher::query()->with('department:id,name');
+        $query = Teacher::query();
 
         if ($teacher !== '') {
             $query->where('name', 'like', "%{$teacher}%");
@@ -41,11 +41,23 @@ class TeacherSearchHandler implements IntentHandler
             );
         }
 
-        return $query->limit(10)->get()->map(fn (Teacher $t) => [
-            'name' => $t->name,
-            'department' => $t->department?->name,
-            'position' => $t->position,
-            'email' => $t->email,
-        ])->all();
+        $total = (clone $query)->count();
+
+        $items = $query
+            ->with('department:id,name')
+            ->limit(10)
+            ->get()
+            ->map(fn (Teacher $t) => [
+                'name' => $t->name,
+                'department' => $t->department?->name,
+                'position' => $t->position,
+                'email' => $t->email,
+                'image_url' => $t->image_url,
+            ])->all();
+
+        return [
+            'total_count' => $total,
+            'items' => $items,
+        ];
     }
 }

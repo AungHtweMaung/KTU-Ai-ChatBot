@@ -1,3 +1,4 @@
+import KtuLogo from '../KtuLogo';
 import ExampleQuestions from './ExampleQuestions';
 
 const TOPICS = [
@@ -19,8 +20,8 @@ const TOPICS = [
 export default function WelcomeScreen({ onPick }) {
     return (
         <div className="welcome-screen">
-            <div className="welcome-icon" aria-hidden="true">
-                <i className="bi bi-stars"></i>
+            <div className="d-flex justify-content-center mb-3">
+                <KtuLogo size={110} />
             </div>
 
             <h1>How can I help you today?</h1>

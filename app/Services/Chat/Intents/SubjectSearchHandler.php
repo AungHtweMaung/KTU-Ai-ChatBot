@@ -28,11 +28,21 @@ class SubjectSearchHandler implements IntentHandler
                 ->orWhere('code', 'like', "%{$subject}%"));
         }
 
-        return $query->limit(20)->get()->map(fn (Subject $s) => [
-            'code' => $s->code,
-            'name' => $s->name,
-            'credits' => $s->credits,
-            'description' => $s->description,
-        ])->all();
+        $total = (clone $query)->count();
+
+        $items = $query
+            ->limit(20)
+            ->get()
+            ->map(fn (Subject $s) => [
+                'code' => $s->code,
+                'name' => $s->name,
+                'credits' => $s->credits,
+                'description' => $s->description,
+            ])->all();
+
+        return [
+            'total_count' => $total,
+            'items' => $items,
+        ];
     }
 }

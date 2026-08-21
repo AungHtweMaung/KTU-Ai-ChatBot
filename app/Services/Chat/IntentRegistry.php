@@ -16,6 +16,11 @@ class IntentRegistry
     /** @var array<string, IntentHandler> */
     private array $handlers = [];
 
+    public function __construct(
+        private readonly FilterNormalizer $normalizer = new FilterNormalizer(),
+    ) {
+    }
+
     public function register(IntentHandler $handler): self
     {
         $this->handlers[$handler->name()] = $handler;
@@ -38,8 +43,14 @@ class IntentRegistry
      */
     public function dispatch(string $intent, array $filters): array
     {
-        return $this->has($intent)
-            ? $this->handlers[$intent]->handle($filters)
-            : [];
+        if (! $this->has($intent)) {
+            return [];
+        }
+
+        // Entity names are stored in English; translate any Myanmar filter
+        // values before they reach the query layer.
+        $filters = $this->normalizer->normalize($filters);
+
+        return $this->handlers[$intent]->handle($filters);
     }
 }
