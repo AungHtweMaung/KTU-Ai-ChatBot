@@ -1,8 +1,8 @@
 const EXAMPLES = [
-    { icon: 'bi-calendar-check', text: 'When is registration?' },
-    { icon: 'bi-clock', text: "Show today's timetable" },
-    { icon: 'bi-cash-coin', text: 'What are the tuition fees?' },
-    { icon: 'bi-person-badge', text: 'Who is the Head of Computer Science?' },
+    { icon: 'bi-calendar-check', text: 'How much is the Registeration Fee?' },
+    { icon: 'bi-clock', text: "How many majors are there?" },
+    // { icon: 'bi-cash-coin', text: '?' },
+    // { icon: 'bi-person-badge', text: 'Who is the Head of Computer Science?' },
 ];
 
 /**

@@ -43,10 +43,10 @@ export default function Dashboard(props) {
         </div>
 
         <div className="row g-3 mb-4">
-          <div className="col-6 col-md-3"><StatCard title="Total Teachers" value={statistics.teachers || 0} icon="bi-person-badge" change="+12% this month" /></div>
-          <div className="col-6 col-md-3"><StatCard title="Total Subjects" value={statistics.subjects || 0} icon="bi-journal-text" change="+5% this month" /></div>
+          <div className="col-6 col-md-3"><StatCard title="Total Teachers" value={statistics.teachers || 0} icon="bi-person-badge" /></div>
+          <div className="col-6 col-md-3"><StatCard title="Total Subjects" value={statistics.subjects || 0} icon="bi-journal-text" /></div>
           <div className="col-6 col-md-3"><StatCard title="Departments" value={statistics.departments || 0} icon="bi-building" /></div>
-          <div className="col-6 col-md-3"><StatCard title="Students" value={statistics.students || 0} icon="bi-people" change="+8% this month" /></div>
+          <div className="col-6 col-md-3"><StatCard title="Majors" value={statistics.majors || 0} icon="bi-mortarboard" /></div>
         </div>
 
         <div className="row g-3">

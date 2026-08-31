@@ -1,10 +1,16 @@
-import {
-    Dialog,
-    DialogPanel,
-    Transition,
-    TransitionChild,
-} from '@headlessui/react';
+import { Dialog, DialogPanel } from '@headlessui/react';
 
+/**
+ * Reusable modal on the Headless UI **v2** API.
+ *
+ * Visibility is controlled by `open` on <Dialog> (v2), and `onClose` fires on
+ * Escape / outside-click. We intentionally do NOT use Headless UI's
+ * `transition` prop here: it keeps the dialog mounted until a CSS
+ * transition-end fires, and if the transition utility classes don't resolve
+ * the dialog never unmounts (the bug that made "Cancel" appear to do nothing).
+ * A short CSS opacity fade on the panel/backdrop keeps it feeling smooth
+ * without blocking unmount.
+ */
 export default function Modal({
     children,
     show = false,
@@ -27,39 +33,22 @@ export default function Modal({
     }[maxWidth];
 
     return (
-        <Transition show={show} leave="duration-200">
-            <Dialog
-                as="div"
-                id="modal"
-                className="fixed inset-0 z-50 flex transform items-center overflow-y-auto px-4 py-6 transition-all sm:px-0"
-                onClose={close}
-            >
-                <TransitionChild
-                    enter="ease-out duration-300"
-                    enterFrom="opacity-0"
-                    enterTo="opacity-100"
-                    leave="ease-in duration-200"
-                    leaveFrom="opacity-100"
-                    leaveTo="opacity-0"
-                >
-                    <div className="absolute inset-0 bg-gray-500/75" />
-                </TransitionChild>
+        <Dialog
+            open={show}
+            onClose={close}
+            className="relative z-50 focus:outline-none"
+        >
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-gray-500/75" aria-hidden="true" />
 
-                <TransitionChild
-                    enter="ease-out duration-300"
-                    enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    enterTo="opacity-100 translate-y-0 sm:scale-100"
-                    leave="ease-in duration-200"
-                    leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-                    leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            {/* Full-screen scroll container that centers the panel */}
+            <div className="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto px-4 py-6 sm:px-0">
+                <DialogPanel
+                    className={`w-full overflow-hidden rounded-lg bg-white shadow-xl sm:mx-auto ${maxWidthClass}`}
                 >
-                    <DialogPanel
-                        className={`mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto sm:w-full ${maxWidthClass}`}
-                    >
-                        {children}
-                    </DialogPanel>
-                </TransitionChild>
-            </Dialog>
-        </Transition>
+                    {children}
+                </DialogPanel>
+            </div>
+        </Dialog>
     );
 }

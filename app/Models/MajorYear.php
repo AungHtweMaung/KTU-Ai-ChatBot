@@ -28,4 +28,9 @@ class MajorYear extends Model
     {
         return $this->hasMany(CurriculumSubject::class);
     }
+
+    public function timetables(): HasMany
+    {
+        return $this->hasMany(Timetable::class);
+    }
 }

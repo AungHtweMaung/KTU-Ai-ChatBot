@@ -11,13 +11,13 @@ const items = [
   { key: 'curriculum-subjects', label: 'Curriculum', icon: 'bi-diagram-3', href: '/admin/curriculum-subjects' },
   { key: 'teacher-assignments', label: 'Teacher Assignments', icon: 'bi-clipboard-check', href: '/admin/teacher-assignments' },
   { key: 'timetable', label: 'Timetable Management', icon: 'bi-calendar-event', href: '/admin/timetable' },
-  { key: 'announcements', label: 'Announcement Management', icon: 'bi-megaphone', href: '/admin/announcements' },
-  { key: 'events', label: 'Event Management', icon: 'bi-calendar2-day', href: '/admin/events' },
+//   { key: 'announcements', label: 'Announcement Management', icon: 'bi-megaphone', href: '/admin/announcements' },
+//   { key: 'events', label: 'Event Management', icon: 'bi-calendar2-day', href: '/admin/events' },
   { key: 'faq', label: 'FAQ Management', icon: 'bi-question-circle', href: '/admin/faqs' },
   { key: 'fees', label: 'Registration Fee Management', icon: 'bi-cash-stack', href: '/admin/fees' },
-  { key: 'analytics', label: 'AI Chatbot Analytics', icon: 'bi-bar-chart', href: '/admin/analytics' },
-  { key: 'users', label: 'Users', icon: 'bi-people', href: '/admin/users' },
-  { key: 'settings', label: 'Settings', icon: 'bi-gear', href: '/admin/settings' },
+//   { key: 'analytics', label: 'AI Chatbot Analytics', icon: 'bi-bar-chart', href: '/admin/analytics' },
+//   { key: 'users', label: 'Users', icon: 'bi-people', href: '/admin/users' },
+//   { key: 'settings', label: 'Settings', icon: 'bi-gear', href: '/admin/settings' },
 ];
 
 export default function Sidebar({ active = 'dashboard', collapsed, isMobileMenu = false }) {

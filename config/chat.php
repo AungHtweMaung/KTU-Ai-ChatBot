@@ -60,6 +60,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Support contact (fallback)
+    |--------------------------------------------------------------------------
+    | Shown when the database has no answer, and given directly when a user
+    | asks for the Student Affairs phone number. Single source of truth for
+    | the number, injected into the answer prompt.
+    */
+    'support_contact' => [
+        'label' => 'Student Affairs (ကျောင်းသားရေးရာ)',
+        'phone' => env('KTU_SUPPORT_PHONE', '09 881 161 310'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Supported intents
     |--------------------------------------------------------------------------
     | Whitelist used to validate the AI's structured intent response. Anything
@@ -69,6 +82,7 @@ return [
         'teacher_search',
         'teacher_profile',
         'subject_search',
+        'timetable_search',
         'major_information',
         'department_information',
         'registration_fee',

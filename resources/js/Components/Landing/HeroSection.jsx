@@ -11,19 +11,6 @@ const topics = [
     { icon: 'bi-question-circle', label: 'FAQs' },
 ];
 
-const conversation = [
-    { from: 'stu', label: 'Student', text: 'Who teaches Database Systems?' },
-    { from: 'ai', label: 'KTU Assistant', text: 'Dr. Aung Kyaw teaches Database Systems.' },
-    {
-        from: 'stu',
-        label: 'Student',
-        text: 'How much is First Year Computer Science registration?',
-    },
-    { from: 'ai', label: 'KTU Assistant', text: 'The registration fee is 150,000 MMK.' },
-    { from: 'stu', label: 'Student', text: 'When is registration?' },
-    { from: 'ai', label: 'KTU Assistant', text: 'Registration starts on August 10.' },
-];
-
 export default function HeroSection() {
     return (
         <section className="hero-section">
@@ -69,66 +56,18 @@ export default function HeroSection() {
                         </div>
                     </div>
 
-                    {/* Right: chat mockup */}
-                    <div className="col-lg-6">
-                        <div className="chat-mock-wrap">
-                            <div className="float-badge float-badge-1">
-                                <i className="bi bi-lightning-charge-fill text-warning"></i>
-                                Instant
-                            </div>
-                            <div className="float-badge float-badge-2">
-                                <i className="bi bi-cpu-fill text-primary"></i>
-                                AI Powered
-                            </div>
-                            <div className="float-badge float-badge-3">
-                                <i className="bi bi-check-circle-fill text-success"></i>
-                                Accurate
-                            </div>
-
-                            <div className="chat-mock">
-                                <div className="chat-mock-header">
-                                    <span className="chat-mock-avatar">
-                                        <i className="bi bi-robot"></i>
-                                    </span>
-                                    <div className="flex-grow-1">
-                                        <div className="fw-bold" style={{ lineHeight: 1.1 }}>
-                                            KTU Assistant
-                                        </div>
-                                        <small className="text-muted-soft">Online now</small>
-                                    </div>
-                                    <span className="chat-mock-dot"></span>
-                                </div>
-
-                                <div className="chat-mock-body">
-                                    {conversation.map((msg, i) => (
-                                        <div
-                                            key={i}
-                                            className={`chat-row ${msg.from === 'stu' ? 'user' : 'ai'}`}
-                                            style={{ animationDelay: `${i * 0.35 + 0.2}s` }}
-                                        >
-                                            <span
-                                                className={`chat-avatar ${msg.from === 'stu' ? 'stu' : 'ai'}`}
-                                            >
-                                                <i
-                                                    className={`bi ${msg.from === 'stu' ? 'bi-person-fill' : 'bi-robot'}`}
-                                                ></i>
-                                            </span>
-                                            <div>
-                                                <div className="chat-label">{msg.label}</div>
-                                                <div className="chat-bubble">{msg.text}</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="chat-input-bar">
-                                    <div className="chat-input-fake">Ask anything about KTU…</div>
-                                    <button className="chat-send" type="button" aria-label="Send">
-                                        <i className="bi bi-send-fill"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                    {/* Right: hero image */}
+                    <div className="col-lg-6 text-center">
+                        <img
+                            src="/images/hero.png"
+                            alt="KTU Assistant"
+                            className="hero-image img-fluid"
+                            style={{
+                                maxWidth: '100%',
+                                height: 'auto',
+                                borderRadius: '1rem',
+                            }}
+                        />
                     </div>
                 </div>
             </div>

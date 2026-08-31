@@ -24,10 +24,14 @@ class FaqSearchHandler implements IntentHandler
             ->orderBy('sort_order');
 
         if ($query !== '') {
+            // `keywords` holds admin-supplied synonyms/alternative terms in any
+            // language, so a question phrased differently (e.g. "ကျောင်းဆောင်"
+            // vs "အဆောင်" vs "hostel") still matches the right FAQ.
             $builder->where(fn ($q) => $q
                 ->where('question', 'like', "%{$query}%")
                 ->orWhere('answer', 'like', "%{$query}%")
-                ->orWhere('category', 'like', "%{$query}%"));
+                ->orWhere('category', 'like', "%{$query}%")
+                ->orWhere('keywords', 'like', "%{$query}%"));
         }
 
         $total = (clone $builder)->count();

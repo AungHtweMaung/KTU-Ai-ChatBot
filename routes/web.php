@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\RegistrationFeeController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\TeacherAssignmentController;
 use App\Http\Controllers\Admin\TeacherController;
+use App\Http\Controllers\Admin\TimetableController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ProfileController;
@@ -22,9 +23,12 @@ Route::get('/', function () {
     ]);
 });
 
+// Post-login landing: admins go to the admin dashboard, everyone else to chat.
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    return request()->user()?->isAdmin()
+        ? redirect()->route('admin.dashboard')
+        : redirect()->route('chat');
+})->middleware(['auth'])->name('dashboard');
 
 // Chat UI is intentionally public so guest visitors can hold a conversation
 // (identified by a UUID stored in localStorage). Authenticated users are
@@ -42,22 +46,47 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
+// Admin panel — requires an authenticated user whose is_admin flag is true.
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/dashboard', function () {
+        // Daily user-question counts for the last 7 calendar days.
+        $days = collect(range(6, 0))->map(fn ($i) => now()->subDays($i));
+
         return Inertia::render('Admin/Dashboard', [
             'statistics' => [
-                'teachers' => 125,
-                'subjects' => 350,
-                'departments' => 12,
-                'students' => 5000,
+                'teachers' => \App\Models\Teacher::count(),
+                'subjects' => \App\Models\Subject::count(),
+                'departments' => \App\Models\Department::count(),
+                'majors' => \App\Models\Major::count(),
                 'daily' => [
-                    'labels' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    'data' => [120, 150, 130, 180, 200, 170, 220],
+                    'labels' => $days->map(fn ($d) => $d->format('D'))->all(),
+                    'data' => $days->map(fn ($d) => \App\Models\Message::where('role', 'user')
+                        ->whereDate('created_at', $d->toDateString())
+                        ->count())->all(),
                 ],
             ],
             'announcements' => [],
-            'events' => [],
-            'recentQuestions' => [],
+            'events' => \App\Models\Event::query()
+                ->where('is_published', true)
+                ->orderByDesc('starts_at')
+                ->take(5)
+                ->get()
+                ->map(fn ($e) => [
+                    'id' => $e->id,
+                    'title' => $e->title,
+                    'start_date' => optional($e->starts_at)->format('M j, Y'),
+                ]),
+            'recentQuestions' => \App\Models\Message::query()
+                ->where('role', 'user')
+                ->latest()
+                ->take(6)
+                ->get()
+                ->map(fn ($m) => [
+                    'id' => $m->id,
+                    'question' => $m->content,
+                ]),
         ]);
     })->name('admin.dashboard');
 
@@ -91,6 +120,11 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'store', 'update', 'destroy'])
         ->parameters(['teacher-assignments' => 'teacher_assignment'])
         ->names('admin.teacher-assignments');
+
+    Route::resource('admin/timetable', TimetableController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['timetable' => 'timetable'])
+        ->names('admin.timetable');
 
     Route::resource('admin/faqs', FaqController::class)
         ->only(['index', 'store', 'update', 'destroy'])

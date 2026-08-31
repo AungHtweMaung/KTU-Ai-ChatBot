@@ -18,6 +18,9 @@ export default function FaqViewModal({ show, faq, onClose }) {
                         {faq.answer}
                     </dd>
 
+                    <dt className="col-sm-3 text-muted fw-normal">Keywords</dt>
+                    <dd className="col-sm-9">{faq.keywords || '—'}</dd>
+
                     <dt className="col-sm-3 text-muted fw-normal">Sort Order</dt>
                     <dd className="col-sm-9">{faq.sort_order}</dd>
 

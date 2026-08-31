@@ -9,6 +9,7 @@ export default function FaqModal({ show, faq, onClose }) {
         category: '',
         question: '',
         answer: '',
+        keywords: '',
         sort_order: 0,
         is_published: true,
     });
@@ -19,6 +20,7 @@ export default function FaqModal({ show, faq, onClose }) {
                 category: faq?.category ?? '',
                 question: faq?.question ?? '',
                 answer: faq?.answer ?? '',
+                keywords: faq?.keywords ?? '',
                 sort_order: faq?.sort_order ?? 0,
                 is_published: faq?.is_published ?? true,
             });
@@ -124,6 +126,30 @@ export default function FaqModal({ show, faq, onClose }) {
                             onChange={(e) => setData('answer', e.target.value)}
                         />
                         {errors.answer && <div className="invalid-feedback">{errors.answer}</div>}
+                    </div>
+
+                    <div className="col-12">
+                        <label htmlFor="keywords" className="form-label">
+                            Keywords / Synonyms{' '}
+                            <span className="text-muted fw-normal">(optional)</span>
+                        </label>
+                        <input
+                            id="keywords"
+                            type="text"
+                            className={`form-control ${errors.keywords ? 'is-invalid' : ''}`}
+                            style={fieldStyle}
+                            placeholder="e.g. hostel, dormitory, အဆောင်, ကျောင်းဆောင်, အိပ်ဆောင်"
+                            value={data.keywords}
+                            onChange={(e) => setData('keywords', e.target.value)}
+                        />
+                        {errors.keywords ? (
+                            <div className="invalid-feedback">{errors.keywords}</div>
+                        ) : (
+                            <small className="text-muted">
+                                Comma-separated alternative words (any language) the chatbot
+                                should also match for this question.
+                            </small>
+                        )}
                     </div>
 
                     <div className="col-12">

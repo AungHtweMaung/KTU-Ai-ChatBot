@@ -36,6 +36,7 @@ class StoreFaqRequest extends FormRequest
             'category' => ['nullable', 'string', 'max:100'],
             'question' => ['required', 'string'],
             'answer' => ['required', 'string'],
+            'keywords' => ['nullable', 'string', 'max:1000'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_published' => ['boolean'],
         ];

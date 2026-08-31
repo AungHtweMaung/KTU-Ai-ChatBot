@@ -33,7 +33,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard', absolute: false));
+        // Admins land in the admin dashboard; everyone else in the chat UI.
+        $home = $request->user()->isAdmin()
+            ? route('admin.dashboard', absolute: false)
+            : route('chat', absolute: false);
+
+        return redirect()->intended($home);
     }
 
     /**

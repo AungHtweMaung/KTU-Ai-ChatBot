@@ -13,6 +13,7 @@ use App\Services\Chat\Intents\RegistrationScheduleHandler;
 use App\Services\Chat\Intents\SubjectSearchHandler;
 use App\Services\Chat\Intents\TeacherProfileHandler;
 use App\Services\Chat\Intents\TeacherSearchHandler;
+use App\Services\Chat\Intents\TimetableSearchHandler;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -31,6 +32,7 @@ class ChatServiceProvider extends ServiceProvider
                 ->register(new TeacherSearchHandler())
                 ->register(new TeacherProfileHandler())
                 ->register(new SubjectSearchHandler())
+                ->register(new TimetableSearchHandler())
                 ->register(new MajorInformationHandler())
                 ->register(new DepartmentInformationHandler())
                 ->register(new RegistrationFeeHandler())

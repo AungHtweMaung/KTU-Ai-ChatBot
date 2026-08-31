@@ -23,7 +23,8 @@ class FaqController extends Controller
                 $query->where(function ($query) use ($search) {
                     $query->where('category', 'like', "%{$search}%")
                         ->orWhere('question', 'like', "%{$search}%")
-                        ->orWhere('answer', 'like', "%{$search}%");
+                        ->orWhere('answer', 'like', "%{$search}%")
+                        ->orWhere('keywords', 'like', "%{$search}%");
                 });
             })
             ->orderBy('sort_order')

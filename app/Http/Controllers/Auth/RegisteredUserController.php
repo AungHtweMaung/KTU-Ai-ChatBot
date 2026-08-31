@@ -47,6 +47,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // Public sign-ups are always normal users → straight to the chat UI.
+        return redirect(route('chat', absolute: false));
     }
 }

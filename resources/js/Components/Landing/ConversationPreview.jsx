@@ -45,7 +45,7 @@ export default function ConversationPreview() {
                     </p>
                 </Reveal>
 
-                <div className="row g-4">
+                {/* <div className="row g-4">
                     {conversations.map((convo, i) => (
                         <div className="col-12 col-lg-4" key={i}>
                             <Reveal delay={i * 100}>
@@ -54,6 +54,26 @@ export default function ConversationPreview() {
                                         <Bubble key={j} from={msg.from} text={msg.text} />
                                     ))}
                                 </div>
+                            </Reveal>
+                        </div>
+                    ))}
+                </div> */}
+
+                {/* Two-image showcase row */}
+                <div className="row g-4 mt-2 justify-content-center">
+                    {['/images/preview-1.png', '/images/preview-2.png'].map((src, i) => (
+                        <div className="col-12 col-md-6" key={src}>
+                            <Reveal delay={i * 100}>
+                                <img
+                                    src={src}
+                                    alt={`KTU Assistant preview ${i + 1}`}
+                                    className="img-fluid w-100"
+                                    style={{
+                                        borderRadius: '1rem',
+                                        height: '400px',
+                                        border: '1px solid var(--bs-border-color, rgba(255,255,255,0.1))',
+                                    }}
+                                />
                             </Reveal>
                         </div>
                     ))}

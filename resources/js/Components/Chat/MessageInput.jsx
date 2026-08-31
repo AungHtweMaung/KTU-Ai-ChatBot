@@ -47,20 +47,6 @@ export default function MessageInput({ value, onChange, onSend, disabled }) {
         <div className="chat-input-region">
             <div className="chat-input-wrap">
                 <div className="chat-input-box">
-                    {/* Attachment (placeholder — wiring comes with backend) */}
-                    <button
-                        type="button"
-                        className="input-icon-btn"
-                        disabled={disabled}
-                        title="Attach a file"
-                        aria-label="Attach a file"
-                        onClick={() => {
-                            /* placeholder: open file picker once backend is ready */
-                        }}
-                    >
-                        <i className="bi bi-paperclip"></i>
-                    </button>
-
                     <textarea
                         ref={textareaRef}
                         rows={1}

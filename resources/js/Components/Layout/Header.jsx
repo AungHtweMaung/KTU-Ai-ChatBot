@@ -18,23 +18,7 @@ export default function Header({ onToggle, onMobileToggle }) {
         </button>
       </div>
       <div className="header-right">
-        <div className="search-container">
-          <i className="bi bi-search"></i>
-          <input type="text" className="search-input" placeholder="Search..." />
-        </div>
-
         <div className="header-icons">
-          <div className="dropdown">
-            <button className="icon-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
-              <i className="bi bi-bell"></i>
-              <span className="badge">0</span>
-            </button>
-            <ul className="dropdown-menu dropdown-menu-end header-dropdown">
-              <li className="dropdown-header">Notifications</li>
-              <li className="dropdown-item-text">No new notifications</li>
-            </ul>
-          </div>
-
           <div className="dropdown">
             <button className="user-btn" data-bs-toggle="dropdown" aria-expanded="false">
               <div className="user-avatar">A</div>
