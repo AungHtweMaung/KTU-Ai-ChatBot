@@ -371,6 +371,7 @@ export default function ChatContainer({ registerNewChat, registerToggleSidebar }
                 onChange={setDraft}
                 onSend={sendMessage}
                 disabled={isResponding}
+                focusKey={activeId}
             />
         </>
     );
