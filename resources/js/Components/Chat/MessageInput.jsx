@@ -3,8 +3,17 @@ import VoiceRecorder from './VoiceRecorder';
 
 const MAX_LINES = 6;
 
-// Matches the layout breakpoint ChatContainer uses for its mobile behaviour.
-const MOBILE_BREAKPOINT = 992;
+/**
+ * True on touch devices, where focusing the textarea would raise the virtual
+ * keyboard over the transcript before the user asked to type.
+ *
+ * Deliberately a pointer query rather than a width check: a narrow desktop
+ * window is still a device with a real keyboard, and gating on width meant a
+ * half-screen browser never got the focus it should have.
+ */
+const isTouchDevice = () =>
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(pointer: coarse)').matches === true;
 
 /**
  * Fixed bottom input.
@@ -15,8 +24,9 @@ const MOBILE_BREAKPOINT = 992;
  *  - Keeps itself focused so the user can always just start typing.
  *
  * Controlled by the parent via `value` / `onChange` so example cards and
- * voice input can populate it. `focusKey` is any value that changes when a
- * different conversation is opened, which re-focuses the textarea.
+ * voice input can populate it. `focusKey` is any value that changes when the
+ * textarea should take focus again — a different conversation being opened, or
+ * the parent pre-filling the draft.
  */
 export default function MessageInput({ value, onChange, onSend, disabled, focusKey }) {
     const textareaRef = useRef(null);
@@ -39,12 +49,16 @@ export default function MessageInput({ value, onChange, onSend, disabled, focusK
         if (el && !el.disabled) el.focus();
     }, []);
 
-    /* Ready to type on arrival, and again whenever another conversation is
-       opened. Skipped on narrow layouts, where focusing would raise the
-       virtual keyboard over the transcript before the user asked to type. */
+    /* Ready to type on arrival, whenever another conversation is opened, and
+       whenever the parent fills the draft for the user (example cards), so the
+       text can be edited or sent without first clicking. Skipped on touch
+       devices — see isTouchDevice. */
     useEffect(() => {
-        if (window.innerWidth < MOBILE_BREAKPOINT) return;
+        if (isTouchDevice()) return;
         focusTextarea();
+        // Put the caret after any text the parent pre-filled.
+        const el = textareaRef.current;
+        if (el) el.setSelectionRange(el.value.length, el.value.length);
     }, [focusKey, focusTextarea]);
 
     /* Hand focus back when a reply finishes and the textarea is re-enabled, so

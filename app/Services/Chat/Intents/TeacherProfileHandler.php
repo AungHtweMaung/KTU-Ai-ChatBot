@@ -4,6 +4,7 @@ namespace App\Services\Chat\Intents;
 
 use App\Models\Teacher;
 use App\Services\Chat\Contracts\IntentHandler;
+use App\Services\Chat\Intents\Concerns\PositionMatching;
 
 /**
  * A focused profile view for one teacher — returns the full contact card and
@@ -11,6 +12,8 @@ use App\Services\Chat\Contracts\IntentHandler;
  */
 class TeacherProfileHandler implements IntentHandler
 {
+    use PositionMatching;
+
     public function name(): string
     {
         return 'teacher_profile';
@@ -19,14 +22,26 @@ class TeacherProfileHandler implements IntentHandler
     public function handle(array $filters): array
     {
         $teacher = trim((string) ($filters['teacher'] ?? ''));
-        if ($teacher === '') {
+        $position = trim((string) ($filters['position'] ?? ''));
+
+        if ($teacher === '' && $position === '') {
             return [];
         }
 
-        $model = Teacher::query()
-            ->with(['department:id,name', 'teacherAssignments.curriculumSubject.subject:id,code,name'])
-            ->where('name', 'like', "%{$teacher}%")
-            ->first();
+        $query = Teacher::query()
+            ->with(['department:id,name', 'teacherAssignments.curriculumSubject.subject:id,code,name']);
+
+        if ($teacher !== '') {
+            $query->where('name', 'like', "%{$teacher}%");
+        }
+
+        // The person may be identified by role rather than by name — "who is
+        // the rector of KTU?" names nobody.
+        if ($position !== '') {
+            $this->wherePositionMatches($query, $position);
+        }
+
+        $model = $query->first();
 
         if (! $model) {
             return [];

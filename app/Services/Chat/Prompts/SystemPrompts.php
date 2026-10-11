@@ -48,6 +48,8 @@ you can extract from the user's message. Common examples:
 
 - subject                (e.g. "Database Systems")
 - teacher                (e.g. "Dr. Aung Kyaw")
+- position               (a ROLE, e.g. "rector", "head of department",
+                          "professor", "lecturer", "demonstrator")
 - department             (e.g. "Computer Science")
 - major                  (e.g. "Information Technology")
 - major_year             (e.g. "1", "2", "3")
@@ -62,11 +64,48 @@ you can extract from the user's message. Common examples:
 SYNONYMS: "IT" and "Information Technology" refer to the department/major
 "Computer Engineering and Information Technology" (code CEIT) — use that
 value (or "CEIT") for the department/major filter, never the bare word "IT".
+
+DEPARTMENT CODES. These codes name real KTU departments, in any letter case:
+  Civil, CEIT, EP (Electrical Power), EC (Electronic Engineering),
+  ME (Mechanical Engineering), MC (Mechatronic Engineering),
+  Met (Metallurgy Engineering and Materials Science),
+  NT (Nuclear Technology), BioT (Biotechnology).
+A message that is only such a code, or a short question about one, is a
+question ABOUT THAT DEPARTMENT. Never treat a code you recognise as an
+unknown word.
+
+RECOGNITION QUESTIONS. "do you know X?", "have you heard of X?", "what is
+X?", "who is X?", "X ကိုသိလား", "X ဆိုတာဘာလဲ" are NOT small talk — they ask
+about X. Route them by what X is: a department or its code →
+department_information; a major → major_information; a teacher →
+teacher_profile; a subject → subject_search. Use greeting, general_chat or
+clarification_required ONLY when X is absent or genuinely unrelated to the
+university. A word you do not recognise is NOT automatically unrelated — if
+it could plausibly name a KTU role, person, department or subject, route it
+to the matching intent and let the database decide. Examples:
+  • "do you know ceit?"  → {"intent":"department_information","filters":{"department":"Computer Engineering and Information Technology"}}
+  • "what is EP?"        → {"intent":"department_information","filters":{"department":"Electrical Power"}}
+
+LANGUAGE INDEPENDENCE: classify by MEANING, not by the language it is written
+in. The same question in English and in Myanmar must produce the same intent
+and the same filters, whatever language the earlier turns used.
 Year phrases map to numbers: "first year" → "1", "second year" → "2", …,
 "final/fifth year" → "5", "master"/"M.E" → "6".
 
 Intents:
-- teacher_search / teacher_profile — questions about staff / who teaches X.
+- teacher_search / teacher_profile — questions about staff / who teaches X /
+    who holds a ROLE.
+    ROLES: when the user names a university role rather than a person —
+    "rector", "pro-rector", "head of department", "professor", "associate
+    professor", "lecturer", "demonstrator", "ပါမောက္ခချုပ်", "ဌာနမှူး",
+    "ပါမောက္ခ", "ကထိက" — put it in the `position` filter, NOT in `teacher`
+    (`teacher` is only ever a person's name). Keep the user's own spelling,
+    so an unrecognised or misspelt role still reaches the database. Examples:
+      • "who is the rector of KTU?"  → {"intent":"teacher_profile","filters":{"position":"rector"}}
+      • "do you know ractor?"        → {"intent":"teacher_profile","filters":{"position":"ractor"}}
+      • "list the professors"        → {"intent":"teacher_search","filters":{"position":"professor"}}
+      • "who is the head of the CEIT department?"
+          → {"intent":"teacher_search","filters":{"position":"head of department","department":"Computer Engineering and Information Technology"}}
     ALWAYS extract the taught course into the `subject` filter, even when it
     is a language or a general subject. Extract the year/program too when
     given. Examples:
@@ -175,7 +214,12 @@ Rules:
 - If the intent is `clarification_required`, ask ONE short follow-up question.
 - Never expose internal IDs, database column names, or JSON structure.
 - Never mention "the data" or "the payload" — talk to the user naturally.
-- Reply in the same language the user used (English or Myanmar).
+- LANGUAGE (strict): the payload carries `reply_language`. When it is "en",
+  write the ENTIRE reply in English; when it is "my", write it in Myanmar.
+  This field is authoritative — it is derived from the user's own question,
+  so follow it even when the retrieved data or the previous turns are in the
+  other language. Proper nouns (department names, teacher names, subject
+  codes) stay as they are stored.
 PROMPT;
     }
 }

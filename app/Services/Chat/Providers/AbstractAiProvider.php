@@ -69,7 +69,15 @@ abstract class AbstractAiProvider implements AiProvider
     public function generateAnswer(string $userQuestion, string $intent, array $dbResult): string
     {
         $payload = json_encode(
-            ['user_question' => $userQuestion, 'intent' => $intent, 'data' => $dbResult],
+            [
+                'user_question' => $userQuestion,
+                'intent' => $intent,
+                // Decided here rather than left to the model: asked in English
+                // it would otherwise sometimes reply in Myanmar, because both
+                // the prompt and the data are largely Myanmar text.
+                'reply_language' => $this->languageOf($userQuestion),
+                'data' => $dbResult,
+            ],
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
         );
 
@@ -111,6 +119,15 @@ abstract class AbstractAiProvider implements AiProvider
             'filters' => is_array($decoded['filters'] ?? null) ? $decoded['filters'] : [],
             'follow_up' => isset($decoded['follow_up']) ? (string) $decoded['follow_up'] : null,
         ];
+    }
+
+    /**
+     * Which language the answer must be written in: "my" when the question
+     * contains any Myanmar script, "en" otherwise.
+     */
+    protected function languageOf(string $question): string
+    {
+        return preg_match('/[\x{1000}-\x{109F}]/u', $question) === 1 ? 'my' : 'en';
     }
 
     protected function fallbackIntent(): array

@@ -31,5 +31,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(AcademicDataSeeder::class);
+        $this->call(TimetableSeeder::class);
     }
 }

@@ -36,6 +36,10 @@ export default function ChatContainer({ registerNewChat, registerToggleSidebar }
     const [messages, setMessages] = useState(initialMessages);
     const [draft, setDraft] = useState('');
     const [isResponding, setIsResponding] = useState(false);
+    /* Bumped whenever the input should take focus for a reason other than the
+       conversation changing — currently picking an example question, which
+       fills the draft and should leave the user ready to edit or send it. */
+    const [focusNonce, setFocusNonce] = useState(0);
     const [error, setError] = useState(null);
     const [showJump, setShowJump] = useState(false);
 
@@ -325,7 +329,12 @@ export default function ChatContainer({ registerNewChat, registerToggleSidebar }
             >
                 <div className="chat-inner">
                     {isEmpty ? (
-                        <WelcomeScreen onPick={(q) => setDraft(q)} />
+                        <WelcomeScreen
+                            onPick={(q) => {
+                                setDraft(q);
+                                setFocusNonce((n) => n + 1);
+                            }}
+                        />
                     ) : (
                         <>
                             {messages.map((m) => (
@@ -371,7 +380,7 @@ export default function ChatContainer({ registerNewChat, registerToggleSidebar }
                 onChange={setDraft}
                 onSend={sendMessage}
                 disabled={isResponding}
-                focusKey={activeId}
+                focusKey={`${activeId}:${focusNonce}`}
             />
         </>
     );

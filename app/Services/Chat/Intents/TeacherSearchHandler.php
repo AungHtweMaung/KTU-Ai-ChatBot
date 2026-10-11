@@ -5,14 +5,16 @@ namespace App\Services\Chat\Intents;
 use App\Models\Teacher;
 use App\Services\Chat\Contracts\IntentHandler;
 use App\Services\Chat\Intents\Concerns\LooseMatching;
+use App\Services\Chat\Intents\Concerns\PositionMatching;
 
 /**
- * "Who teaches X?" / "Show me teachers in the Y department" — matches
- * teachers by subject, name, department, or position.
+ * "Who teaches X?" / "Show me teachers in the Y department" / "who is the
+ * rector?" — matches teachers by subject, name, department, or position.
  */
 class TeacherSearchHandler implements IntentHandler
 {
     use LooseMatching;
+    use PositionMatching;
 
     public function name(): string
     {
@@ -26,11 +28,20 @@ class TeacherSearchHandler implements IntentHandler
         $department = trim((string) ($filters['department'] ?? ''));
         $major = trim((string) ($filters['major'] ?? ''));
         $majorYear = trim((string) ($filters['major_year'] ?? ''));
+        $position = trim((string) ($filters['position'] ?? ''));
 
         $query = Teacher::query();
 
         if ($teacher !== '') {
             $query->where('name', 'like', "%{$teacher}%");
+        }
+
+        // "Who is the rector?" / "list the professors" — the role is stored
+        // free-form in `position`, often as several roles in one string
+        // ("Head of Department / Professor"), so a loose contains-match is
+        // what finds them.
+        if ($position !== '') {
+            $this->wherePositionMatches($query, $position);
         }
 
         // When the question carries academic context ("who teaches English in
