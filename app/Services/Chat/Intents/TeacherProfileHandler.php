@@ -32,7 +32,9 @@ class TeacherProfileHandler implements IntentHandler
             ->with(['department:id,name', 'teacherAssignments.curriculumSubject.subject:id,code,name']);
 
         if ($teacher !== '') {
-            $query->where('name', 'like', "%{$teacher}%");
+            // Case/space/punctuation-insensitive so "Dr Khaing Myat Mon"
+            // matches the record stored as "Dr. Khaing Myat Mon".
+            $this->looseLike($query, ['name'], $teacher);
         }
 
         // The person may be identified by role rather than by name — "who is

@@ -40,17 +40,19 @@ class SubjectSearchHandler implements IntentHandler
         if ($major !== '' || $department !== '' || $majorYear !== '' || $semester !== '') {
             $query->whereHas('curriculumSubjects', function ($cs) use ($major, $department, $majorYear, $semester) {
                 if ($major !== '') {
-                    $cs->whereHas('major', fn ($m) => $m->where('name', 'like', "%{$major}%"));
+                    $cs->whereHas('major', fn ($m) => $this->looseLike($m, ['name'], $major));
                 }
                 if ($department !== '') {
-                    $cs->whereHas('major.department', fn ($d) => $d
-                        ->where('name', 'like', "%{$department}%")
-                        ->orWhere('code', 'like', "%{$department}%"));
+                    $cs->whereHas('major.department', fn ($d) => $this->looseLike($d, ['name', 'code'], $department));
                 }
                 if ($majorYear !== '') {
-                    $cs->whereHas('majorYear', fn ($y) => ctype_digit($majorYear)
-                        ? $y->where('year_number', (int) $majorYear)
-                        : $y->where('name', 'like', "%{$majorYear}%"));
+                    $cs->whereHas('majorYear', function ($y) use ($majorYear) {
+                        if (ctype_digit($majorYear)) {
+                            $y->where('year_number', (int) $majorYear);
+                        } else {
+                            $this->looseLike($y, ['name'], $majorYear);
+                        }
+                    });
                 }
                 if ($semester !== '' && ctype_digit($semester)) {
                     $cs->where('semester', (int) $semester);

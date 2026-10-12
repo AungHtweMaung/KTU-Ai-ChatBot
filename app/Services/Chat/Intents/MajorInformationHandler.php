@@ -4,12 +4,15 @@ namespace App\Services\Chat\Intents;
 
 use App\Models\Major;
 use App\Services\Chat\Contracts\IntentHandler;
+use App\Services\Chat\Intents\Concerns\LooseMatching;
 
 /**
  * Information about a major/program — belongs to a department, has years.
  */
 class MajorInformationHandler implements IntentHandler
 {
+    use LooseMatching;
+
     public function name(): string
     {
         return 'major_information';
@@ -25,10 +28,10 @@ class MajorInformationHandler implements IntentHandler
         $query = Major::query();
 
         if ($major !== '') {
-            $query->where('name', 'like', "%{$major}%");
+            $this->looseLike($query, ['name'], $major);
         }
         if ($department !== '') {
-            $query->whereHas('department', fn ($q) => $q->where('name', 'like', "%{$department}%"));
+            $query->whereHas('department', fn ($q) => $this->looseLike($q, ['name', 'code'], $department));
         }
 
         $total = (clone $query)->count();

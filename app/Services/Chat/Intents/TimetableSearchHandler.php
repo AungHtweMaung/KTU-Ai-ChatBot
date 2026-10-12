@@ -4,6 +4,7 @@ namespace App\Services\Chat\Intents;
 
 use App\Models\Timetable;
 use App\Services\Chat\Contracts\IntentHandler;
+use App\Services\Chat\Intents\Concerns\LooseMatching;
 
 /**
  * "Show me the timetable for third year CEIT" / "class schedule" — returns the
@@ -12,6 +13,8 @@ use App\Services\Chat\Contracts\IntentHandler;
  */
 class TimetableSearchHandler implements IntentHandler
 {
+    use LooseMatching;
+
     public function name(): string
     {
         return 'timetable_search';
@@ -29,20 +32,22 @@ class TimetableSearchHandler implements IntentHandler
         if ($major !== '' || $department !== '') {
             $query->whereHas('majorYear.major', function ($m) use ($major, $department) {
                 if ($major !== '') {
-                    $m->where('name', 'like', "%{$major}%");
+                    $this->looseLike($m, ['name'], $major);
                 }
                 if ($department !== '') {
-                    $m->whereHas('department', fn ($d) => $d
-                        ->where('name', 'like', "%{$department}%")
-                        ->orWhere('code', 'like', "%{$department}%"));
+                    $m->whereHas('department', fn ($d) => $this->looseLike($d, ['name', 'code'], $department));
                 }
             });
         }
 
         if ($majorYear !== '') {
-            $query->whereHas('majorYear', fn ($y) => ctype_digit($majorYear)
-                ? $y->where('year_number', (int) $majorYear)
-                : $y->where('name', 'like', "%{$majorYear}%"));
+            $query->whereHas('majorYear', function ($y) use ($majorYear) {
+                if (ctype_digit($majorYear)) {
+                    $y->where('year_number', (int) $majorYear);
+                } else {
+                    $this->looseLike($y, ['name'], $majorYear);
+                }
+            });
         }
 
         if ($semester !== '' && ctype_digit($semester)) {

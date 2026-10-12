@@ -4,12 +4,15 @@ namespace App\Services\Chat\Intents;
 
 use App\Models\Faq;
 use App\Services\Chat\Contracts\IntentHandler;
+use App\Services\Chat\Intents\Concerns\LooseMatching;
 
 /**
  * Frequently-asked-questions search across question, answer, and category.
  */
 class FaqSearchHandler implements IntentHandler
 {
+    use LooseMatching;
+
     public function name(): string
     {
         return 'faq_search';
@@ -26,12 +29,9 @@ class FaqSearchHandler implements IntentHandler
         if ($query !== '') {
             // `keywords` holds admin-supplied synonyms/alternative terms in any
             // language, so a question phrased differently (e.g. "ကျောင်းဆောင်"
-            // vs "အဆောင်" vs "hostel") still matches the right FAQ.
-            $builder->where(fn ($q) => $q
-                ->where('question', 'like', "%{$query}%")
-                ->orWhere('answer', 'like', "%{$query}%")
-                ->orWhere('category', 'like', "%{$query}%")
-                ->orWhere('keywords', 'like', "%{$query}%"));
+            // vs "အဆောင်" vs "hostel") still matches the right FAQ. Matching is
+            // case/space/punctuation-insensitive so "Dr" finds "Dr." etc.
+            $this->looseLike($builder, ['question', 'answer', 'category', 'keywords'], $query);
         }
 
         $total = (clone $builder)->count();

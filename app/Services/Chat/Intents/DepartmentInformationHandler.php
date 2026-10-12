@@ -4,12 +4,15 @@ namespace App\Services\Chat\Intents;
 
 use App\Models\Department;
 use App\Services\Chat\Contracts\IntentHandler;
+use App\Services\Chat\Intents\Concerns\LooseMatching;
 
 /**
  * Information about a department (by name or code) — includes majors.
  */
 class DepartmentInformationHandler implements IntentHandler
 {
+    use LooseMatching;
+
     public function name(): string
     {
         return 'department_information';
@@ -22,9 +25,7 @@ class DepartmentInformationHandler implements IntentHandler
         $query = Department::query();
 
         if ($department !== '') {
-            $query->where(fn ($q) => $q
-                ->where('name', 'like', "%{$department}%")
-                ->orWhere('code', 'like', "%{$department}%"));
+            $this->looseLike($query, ['name', 'code'], $department);
         }
 
         $total = (clone $query)->count();

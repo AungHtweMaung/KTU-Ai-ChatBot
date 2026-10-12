@@ -27,10 +27,7 @@ class EventSearchHandler implements IntentHandler
             ->orderBy('starts_at');
 
         if ($keyword !== '') {
-            $query->where(fn ($q) => $q
-                ->where('title', 'like', "%{$keyword}%")
-                ->orWhere('description', 'like', "%{$keyword}%")
-                ->orWhere('type', 'like', "%{$keyword}%"));
+            $this->looseLike($query, ['title', 'description', 'type'], $keyword);
         }
 
         [$from, $to] = $this->resolveDateWindow($date);

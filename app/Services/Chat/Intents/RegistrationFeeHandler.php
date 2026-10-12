@@ -4,6 +4,7 @@ namespace App\Services\Chat\Intents;
 
 use App\Models\RegistrationFee;
 use App\Services\Chat\Contracts\IntentHandler;
+use App\Services\Chat\Intents\Concerns\LooseMatching;
 
 /**
  * Registration / tuition / lab / hostel fees. Supports filtering by major
@@ -11,6 +12,8 @@ use App\Services\Chat\Contracts\IntentHandler;
  */
 class RegistrationFeeHandler implements IntentHandler
 {
+    use LooseMatching;
+
     public function name(): string
     {
         return 'registration_fee';
@@ -26,12 +29,12 @@ class RegistrationFeeHandler implements IntentHandler
         if ($major !== '') {
             $query->where(function ($q) use ($major) {
                 $q->whereNull('major_id')
-                    ->orWhereHas('major', fn ($m) => $m->where('name', 'like', "%{$major}%"));
+                    ->orWhereHas('major', fn ($m) => $this->looseLike($m, ['name'], $major));
             });
         }
 
         if ($feeType !== '') {
-            $query->where('name', 'like', "%{$feeType}%");
+            $this->looseLike($query, ['name'], $feeType);
         }
 
         $total = (clone $query)->count();

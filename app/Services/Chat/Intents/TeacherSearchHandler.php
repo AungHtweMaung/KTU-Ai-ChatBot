@@ -33,7 +33,9 @@ class TeacherSearchHandler implements IntentHandler
         $query = Teacher::query();
 
         if ($teacher !== '') {
-            $query->where('name', 'like', "%{$teacher}%");
+            // Case/space/punctuation-insensitive, so "Dr Khaing Myat Mon"
+            // still finds the record stored as "Dr. Khaing Myat Mon".
+            $this->looseLike($query, ['name'], $teacher);
         }
 
         // "Who is the rector?" / "list the professors" — the role is stored
@@ -55,9 +57,7 @@ class TeacherSearchHandler implements IntentHandler
         if ($department !== '' && ! $academic) {
             // Pure "list teachers in the X department" — match the home
             // department by full name OR short code ("CEIT").
-            $query->whereHas('department', fn ($q) => $q
-                ->where('name', 'like', "%{$department}%")
-                ->orWhere('code', 'like', "%{$department}%"));
+            $query->whereHas('department', fn ($q) => $this->looseLike($q, ['name', 'code'], $department));
         }
 
         // Academic filters describe the SAME teaching assignment, so they are
@@ -70,24 +70,25 @@ class TeacherSearchHandler implements IntentHandler
                 }
 
                 if ($major !== '') {
-                    $cs->whereHas('major', fn ($m) => $m
-                        ->where('name', 'like', "%{$major}%")
-                        ->orWhereHas('department', fn ($d) => $d
-                            ->where('name', 'like', "%{$major}%")
-                            ->orWhere('code', 'like', "%{$major}%")));
+                    $cs->whereHas('major', function ($m) use ($major) {
+                        $this->looseLike($m, ['name'], $major);
+                        $m->orWhereHas('department', fn ($d) => $this->looseLike($d, ['name', 'code'], $major));
+                    });
                 }
 
                 if ($department !== '') {
                     // The class's program department (e.g. "CEIT first year").
-                    $cs->whereHas('major.department', fn ($d) => $d
-                        ->where('name', 'like', "%{$department}%")
-                        ->orWhere('code', 'like', "%{$department}%"));
+                    $cs->whereHas('major.department', fn ($d) => $this->looseLike($d, ['name', 'code'], $department));
                 }
 
                 if ($majorYear !== '') {
-                    $cs->whereHas('majorYear', fn ($y) => ctype_digit($majorYear)
-                        ? $y->where('year_number', (int) $majorYear)
-                        : $y->where('name', 'like', "%{$majorYear}%"));
+                    $cs->whereHas('majorYear', function ($y) use ($majorYear) {
+                        if (ctype_digit($majorYear)) {
+                            $y->where('year_number', (int) $majorYear);
+                        } else {
+                            $this->looseLike($y, ['name'], $majorYear);
+                        }
+                    });
                 }
             });
         }
