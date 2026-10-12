@@ -23,3 +23,32 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Upload limits when PHP runs as an Apache module. The application allows an
+# 8 MB timetable image, but PHP's defaults (upload_max_filesize 2M /
+# post_max_size 8M) reject the request before Laravel runs, which the user sees
+# as a bare "413 Content Too Large" page.
+#
+# Only applied when mod_php is actually loaded — a bare php_value directive on
+# a host running PHP-FPM would abort the request with a 500. Hosts with FPM use
+# .user.ini instead.
+<IfModule mod_php.c>
+    php_value upload_max_filesize 12M
+    php_value post_max_size 14M
+    php_value memory_limit 256M
+    php_value max_execution_time 120
+</IfModule>
+
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 12M
+    php_value post_max_size 14M
+    php_value memory_limit 256M
+    php_value max_execution_time 120
+</IfModule>
+
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 12M
+    php_value post_max_size 14M
+    php_value memory_limit 256M
+    php_value max_execution_time 120
+</IfModule>

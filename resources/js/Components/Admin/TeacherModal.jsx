@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from '@inertiajs/react';
+import {
+    imageValidationError,
+    PHOTO_IMAGE_TYPES,
+    PHOTO_MAX_BYTES,
+    prepareImageForUpload,
+    TARGET_IMAGE_BYTES,
+} from '../../lib/imageUpload';
 import Modal from './Modal';
 
 export default function TeacherModal({ show, teacher, departments = [], onClose }) {
     const isEdit = Boolean(teacher);
     const fileInputRef = useRef(null);
     const [preview, setPreview] = useState(null);
+    const [localError, setLocalError] = useState(null);
+    const [optimising, setOptimising] = useState(false);
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         _method: 'post',
@@ -33,20 +42,66 @@ export default function TeacherModal({ show, teacher, departments = [], onClose 
                 image: null,
             });
             setPreview(teacher?.image_url ?? null);
+            setLocalError(null);
+            setOptimising(false);
             clearErrors();
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [show, teacher]);
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const file = e.target.files?.[0] ?? null;
+
+        if (!file) {
+            setData('image', null);
+            setPreview(teacher?.image_url ?? null);
+            setLocalError(null);
+
+            return;
+        }
+
+        const invalid = imageValidationError(file, {
+            maxBytes: PHOTO_MAX_BYTES,
+            acceptedTypes: PHOTO_IMAGE_TYPES,
+        });
+
+        if (invalid) {
+            // Refuse before the request is built — an oversized body never
+            // reaches Laravel, so the server cannot report it as a validation
+            // error the way it does for the other fields.
+            setData('image', null);
+            setPreview(teacher?.image_url ?? null);
+            setLocalError(invalid);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+
+            return;
+        }
+
+        setLocalError(null);
+        setPreview(URL.createObjectURL(file));
         setData('image', file);
-        setPreview(file ? URL.createObjectURL(file) : (teacher?.image_url ?? null));
+
+        if (file.size > TARGET_IMAGE_BYTES) {
+            setOptimising(true);
+
+            try {
+                const prepared = await prepareImageForUpload(file);
+
+                setData('image', prepared);
+                setPreview(URL.createObjectURL(prepared));
+            } finally {
+                setOptimising(false);
+            }
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        if (localError || optimising) {
+            return;
+        }
 
         const url = isEdit
             ? route('admin.teachers.update', teacher.id)
@@ -103,12 +158,17 @@ export default function TeacherModal({ show, teacher, departments = [], onClose 
                             type="file"
                             id="image"
                             accept="image/jpeg,image/png,image/webp"
-                            className={`form-control form-control-sm ${errors.image ? 'is-invalid' : ''}`}
+                            className={`form-control form-control-sm ${errors.image || localError ? 'is-invalid' : ''}`}
                             style={fieldStyle}
                             onChange={handleImageChange}
                         />
-                        {errors.image && <div className="invalid-feedback d-block">{errors.image}</div>}
-                        <small className="text-muted d-block mt-1">JPG, PNG, or WebP. Max 2MB.</small>
+                        {(localError || errors.image) && (
+                            <div className="invalid-feedback d-block">{localError ?? errors.image}</div>
+                        )}
+                        <small className="text-muted d-block mt-1">
+                            JPG, PNG, or WebP, up to 2MB. Larger images are optimised automatically
+                            before upload.
+                        </small>
                     </div>
 
                     <div className="col-md-8">
@@ -233,8 +293,8 @@ export default function TeacherModal({ show, teacher, departments = [], onClose 
                     <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
                         Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary" disabled={processing}>
-                        {isEdit ? 'Update' : 'Save'}
+                    <button type="submit" className="btn btn-primary" disabled={processing || optimising}>
+                        {optimising ? 'Optimising…' : isEdit ? 'Update' : 'Save'}
                     </button>
                 </div>
             </form>

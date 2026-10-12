@@ -10,6 +10,11 @@ const messages = {
     title: 'Page not found',
     description: 'The page you are looking for does not exist or has been moved.',
   },
+  413: {
+    title: 'Upload too large',
+    description:
+      'The file you tried to upload is larger than the server accepts. Please choose a smaller image and try again.',
+  },
   500: {
     title: 'Server error',
     description: 'Something went wrong while loading this page.',
