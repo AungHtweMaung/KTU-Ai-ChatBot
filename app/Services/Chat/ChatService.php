@@ -31,6 +31,7 @@ class ChatService
         private readonly AiProvider $ai,
         private readonly IntentRegistry $intents,
         private readonly DepartmentGrounder $grounder,
+        private readonly ClarificationRecovery $recovery,
     ) {
     }
 
@@ -62,6 +63,11 @@ class ChatService
         try {
             $history = $conversation ? $this->loadSlidingWindow($conversation) : [];
             $envelope = $this->ai->extractIntent($history, $input['message']);
+
+            // "clarification_required" is a dead end — no handler runs, so the
+            // database is never queried. Give the turn a second chance before
+            // asking the user to clarify a question the data can answer.
+            $envelope = $this->recovery->recover($envelope, $history, $input['message']);
 
             // The latest message is authoritative: if it names a department,
             // that department overrides whatever topic the model carried over
