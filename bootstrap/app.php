@@ -38,7 +38,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->respond(function ($response, Throwable $exception, Request $request) {
             $status = $response->getStatusCode();
 
-            if (! in_array($status, [403, 404, 500, 503], true) || $request->expectsJson()) {
+            // 413 is included so an oversized upload renders the application's
+            // own error page. PHP rejects a body larger than post_max_size
+            // before Laravel boots (ValidatePostSize sits in the global
+            // middleware stack, ahead of the session), so there is no session to
+            // flash a validation error into. Without this the framework's bare
+            // error page is all the user sees, shown raw inside Inertia's error
+            // modal — which reads as a crash rather than "your file is too big".
+            if (! in_array($status, [403, 404, 413, 500, 503], true) || $request->expectsJson()) {
                 return $response;
             }
 

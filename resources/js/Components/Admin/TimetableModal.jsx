@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from '@inertiajs/react';
+import {
+    imageValidationError,
+    prepareImageForUpload,
+    TIMETABLE_IMAGE_TYPES,
+    TIMETABLE_MAX_BYTES,
+    TARGET_IMAGE_BYTES,
+} from '../../lib/imageUpload';
 import Modal from './Modal';
 
 const classLabel = (cls) => `${cls.name} — ${cls.major?.name ?? '—'}`;
@@ -8,6 +15,8 @@ export default function TimetableModal({ show, timetable, classes = [], onClose 
     const isEdit = Boolean(timetable);
     const fileInputRef = useRef(null);
     const [preview, setPreview] = useState(null);
+    const [localError, setLocalError] = useState(null);
+    const [optimising, setOptimising] = useState(false);
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         _method: 'post',
@@ -25,20 +34,66 @@ export default function TimetableModal({ show, timetable, classes = [], onClose 
                 image: null,
             });
             setPreview(timetable?.image_url ?? null);
+            setLocalError(null);
+            setOptimising(false);
             clearErrors();
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [show, timetable]);
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const file = e.target.files?.[0] ?? null;
+
+        if (!file) {
+            setData('image', null);
+            setPreview(timetable?.image_url ?? null);
+            setLocalError(null);
+
+            return;
+        }
+
+        const invalid = imageValidationError(file, {
+            maxBytes: TIMETABLE_MAX_BYTES,
+            acceptedTypes: TIMETABLE_IMAGE_TYPES,
+        });
+
+        if (invalid) {
+            // Refuse before the request is built. An oversized multipart body is
+            // rejected by PHP before Laravel runs, so letting it through would
+            // show a bare "413 Content Too Large" page instead of this message.
+            setData('image', null);
+            setPreview(timetable?.image_url ?? null);
+            setLocalError(invalid);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+
+            return;
+        }
+
+        setLocalError(null);
+        setPreview(URL.createObjectURL(file));
         setData('image', file);
-        setPreview(file ? URL.createObjectURL(file) : (timetable?.image_url ?? null));
+
+        if (file.size > TARGET_IMAGE_BYTES) {
+            setOptimising(true);
+
+            try {
+                const prepared = await prepareImageForUpload(file);
+
+                setData('image', prepared);
+                setPreview(URL.createObjectURL(prepared));
+            } finally {
+                setOptimising(false);
+            }
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        if (localError || optimising) {
+            return;
+        }
 
         const url = isEdit
             ? route('admin.timetable.update', timetable.id)
@@ -122,13 +177,16 @@ export default function TimetableModal({ show, timetable, classes = [], onClose 
                             type="file"
                             id="image"
                             accept="image/jpeg,image/png"
-                            className={`form-control ${errors.image ? 'is-invalid' : ''}`}
+                            className={`form-control ${errors.image || localError ? 'is-invalid' : ''}`}
                             style={fieldStyle}
                             onChange={handleImageChange}
                         />
-                        {errors.image && <div className="invalid-feedback d-block">{errors.image}</div>}
+                        {(localError || errors.image) && (
+                            <div className="invalid-feedback d-block">{localError ?? errors.image}</div>
+                        )}
                         <small className="text-muted d-block mt-1">
-                            JPG or PNG. Max 8MB.
+                            JPG or PNG, up to 8MB. Larger images are optimised automatically before
+                            upload.
                             {isEdit && ' Leave empty to keep the current image.'}
                         </small>
 
@@ -151,8 +209,8 @@ export default function TimetableModal({ show, timetable, classes = [], onClose 
                     <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
                         Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary" disabled={processing}>
-                        {isEdit ? 'Update' : 'Save'}
+                    <button type="submit" className="btn btn-primary" disabled={processing || optimising}>
+                        {optimising ? 'Optimising…' : isEdit ? 'Update' : 'Save'}
                     </button>
                 </div>
             </form>

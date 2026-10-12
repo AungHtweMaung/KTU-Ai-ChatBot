@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from '@inertiajs/react';
+import {
+    imageValidationError,
+    PHOTO_IMAGE_TYPES,
+    PHOTO_MAX_BYTES,
+    prepareImageForUpload,
+    TARGET_IMAGE_BYTES,
+} from '../../lib/imageUpload';
 import Modal from './Modal';
 
 /**
@@ -28,6 +35,8 @@ export default function EventModal({ show, event, majors = [], majorYears = [], 
     const isEdit = Boolean(event);
     const fileInputRef = useRef(null);
     const [preview, setPreview] = useState(null);
+    const [localError, setLocalError] = useState(null);
+    const [optimising, setOptimising] = useState(false);
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         _method: 'post',
@@ -59,6 +68,8 @@ export default function EventModal({ show, event, majors = [], majorYears = [], 
                 is_published: event?.is_published ?? true,
             });
             setPreview(event?.cover_image_url ?? null);
+            setLocalError(null);
+            setOptimising(false);
             clearErrors();
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
@@ -82,14 +93,58 @@ export default function EventModal({ show, event, majors = [], majorYears = [], 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data.major_id]);
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const file = e.target.files?.[0] ?? null;
+
+        if (!file) {
+            setData('cover_image', null);
+            setPreview(event?.cover_image_url ?? null);
+            setLocalError(null);
+
+            return;
+        }
+
+        const invalid = imageValidationError(file, {
+            maxBytes: PHOTO_MAX_BYTES,
+            acceptedTypes: PHOTO_IMAGE_TYPES,
+        });
+
+        if (invalid) {
+            // Refuse before the request is built — an oversized body never
+            // reaches Laravel, so the server cannot report it as a validation
+            // error the way it does for the other fields.
+            setData('cover_image', null);
+            setPreview(event?.cover_image_url ?? null);
+            setLocalError(invalid);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+
+            return;
+        }
+
+        setLocalError(null);
+        setPreview(URL.createObjectURL(file));
         setData('cover_image', file);
-        setPreview(file ? URL.createObjectURL(file) : (event?.cover_image_url ?? null));
+
+        if (file.size > TARGET_IMAGE_BYTES) {
+            setOptimising(true);
+
+            try {
+                const prepared = await prepareImageForUpload(file);
+
+                setData('cover_image', prepared);
+                setPreview(URL.createObjectURL(prepared));
+            } finally {
+                setOptimising(false);
+            }
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        if (localError || optimising) {
+            return;
+        }
 
         const url = isEdit
             ? route('admin.events.update', event.id)
@@ -148,15 +203,16 @@ export default function EventModal({ show, event, majors = [], majorYears = [], 
                             type="file"
                             id="cover_image"
                             accept="image/jpeg,image/png,image/webp"
-                            className={`form-control form-control-sm ${errors.cover_image ? 'is-invalid' : ''}`}
+                            className={`form-control form-control-sm ${errors.cover_image || localError ? 'is-invalid' : ''}`}
                             style={fieldStyle}
                             onChange={handleImageChange}
                         />
-                        {errors.cover_image && (
-                            <div className="invalid-feedback d-block">{errors.cover_image}</div>
+                        {(localError || errors.cover_image) && (
+                            <div className="invalid-feedback d-block">{localError ?? errors.cover_image}</div>
                         )}
                         <small className="text-muted d-block mt-1">
-                            Cover image. JPG/PNG/WebP, max 2MB.
+                            Cover image. JPG/PNG/WebP, up to 2MB. Larger images are optimised
+                            automatically before upload.
                         </small>
                     </div>
 
@@ -331,8 +387,8 @@ export default function EventModal({ show, event, majors = [], majorYears = [], 
                     <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
                         Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary" disabled={processing}>
-                        {isEdit ? 'Update' : 'Save'}
+                    <button type="submit" className="btn btn-primary" disabled={processing || optimising}>
+                        {optimising ? 'Optimising…' : isEdit ? 'Update' : 'Save'}
                     </button>
                 </div>
             </form>
