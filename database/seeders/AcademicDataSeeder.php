@@ -539,7 +539,10 @@ class AcademicDataSeeder extends Seeder
                 ['code' => 'E-4032', 'name' => 'English', 'teachers' => ['U Aung Kyaw Myint']],
                 ['code' => 'EM-4012', 'name' => 'Engineering Mathematics IV', 'teachers' => ['Daw Ank Phyu Win']],
                 ['code' => 'EM-3002', 'name' => 'Engineering Mathematics III (Retake)', 'teachers' => ['Daw Myint Myint Nwe']],
-                ['code' => 'CEIT-4001', 'name' => 'Computer Programming (CEIT)', 'teachers' => ['Dr. Khaing Myat Mon', 'Dr. Nan Mo Kham']],
+                // The sheet lists Dr. Khaing Myat Mon here too, but she is a
+                // CEIT lecturer and does not teach into Civil — only
+                // Dr. Nan Mo Kham teaches this service subject to Civil.
+                ['code' => 'CEIT-4001', 'name' => 'Computer Programming (CEIT)', 'teachers' => ['Dr. Nan Mo Kham']],
                 ['code' => 'CE-4001', 'name' => 'Surveying', 'teachers' => ['Daw Ei Phyu', 'U Myint Than Naing', 'Daw Khaing Khaing Lin']],
                 ['code' => 'CE-4003', 'name' => 'Mechanics of Materials', 'teachers' => ['Daw Nandar Lwin']],
                 ['code' => 'EG-4011', 'name' => 'Engineering Geology for Civil Engineer II', 'teachers' => ['Daw Hnin Hnin Shwe']],
