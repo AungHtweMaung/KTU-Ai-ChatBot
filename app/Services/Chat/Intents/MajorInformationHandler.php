@@ -38,7 +38,7 @@ class MajorInformationHandler implements IntentHandler
 
         $items = $query
             ->with(['department:id,name', 'majorYears:id,major_id,year_number,name'])
-            ->limit(10)
+            ->limit(30)
             ->get()
             ->map(fn (Major $m) => [
                 'name' => $m->name,

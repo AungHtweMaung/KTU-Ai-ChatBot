@@ -36,7 +36,7 @@ class FaqSearchHandler implements IntentHandler
 
         $total = (clone $builder)->count();
 
-        $items = $builder->limit(10)->get()->map(fn (Faq $f) => [
+        $items = $builder->limit(20)->get()->map(fn (Faq $f) => [
             'category' => $f->category,
             'question' => $f->question,
             'answer' => $f->answer,

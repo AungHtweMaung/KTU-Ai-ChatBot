@@ -105,7 +105,9 @@ class TeacherSearchHandler implements IntentHandler
                 'teacherAssignments.curriculumSubject.majorYear:id,name,year_number',
                 'teacherAssignments.curriculumSubject.major:id,name',
             ])
-            ->limit(10)
+            // High enough to return a whole department's staff in one go, so
+            // the list matches the total_count the answer quotes.
+            ->limit(50)
             ->get()
             ->map(fn (Teacher $t) => [
                 'name' => $t->name,

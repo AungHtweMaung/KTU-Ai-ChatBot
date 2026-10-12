@@ -31,7 +31,7 @@ class LooseMatchingTest extends TestCase
         return Teacher::create([
             'department_id' => $department->id,
             'name' => $name,
-            'email' => strtolower(preg_replace('/[^a-z]+/i', '.', $name)).'@ktu.edu.mm',
+            'email' => strtolower(preg_replace('/[^a-z0-9]+/i', '.', $name)).'@ktu.edu.mm',
             'position' => $position,
         ]);
     }
@@ -73,6 +73,20 @@ class LooseMatchingTest extends TestCase
         $result = app(TeacherSearchHandler::class)->handle(['teacher' => 'zzz-not-a-real-name']);
 
         $this->assertSame(0, $result['total_count']);
+    }
+
+    public function test_teacher_list_returns_every_match_not_a_truncated_page(): void
+    {
+        for ($i = 1; $i <= 12; $i++) {
+            $this->teacher("Teacher Number {$i}");
+        }
+
+        $result = app(TeacherSearchHandler::class)->handle(['department' => 'CEIT']);
+
+        // The count the answer quotes must equal the number of rows it lists,
+        // otherwise the reply says "12 teachers" but shows only 10.
+        $this->assertSame(12, $result['total_count']);
+        $this->assertCount(12, $result['items']);
     }
 
     public function test_department_code_match_is_case_insensitive(): void

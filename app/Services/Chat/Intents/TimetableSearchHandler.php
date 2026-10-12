@@ -57,7 +57,7 @@ class TimetableSearchHandler implements IntentHandler
         $total = (clone $query)->count();
 
         $items = $query
-            ->limit(15)
+            ->limit(25)
             ->get()
             ->map(fn (Timetable $t) => [
                 'class' => $t->majorYear?->name,

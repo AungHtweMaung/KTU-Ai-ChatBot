@@ -39,7 +39,7 @@ class RegistrationFeeHandler implements IntentHandler
 
         $total = (clone $query)->count();
 
-        $items = $query->limit(20)->get()->map(fn (RegistrationFee $f) => [
+        $items = $query->limit(30)->get()->map(fn (RegistrationFee $f) => [
             'name' => $f->name,
             'major' => $f->major?->name ?? 'All majors',
             'amount' => (float) $f->amount,

@@ -63,7 +63,7 @@ class SubjectSearchHandler implements IntentHandler
         $total = (clone $query)->count();
 
         $items = $query
-            ->limit(30)
+            ->limit(50)
             ->get()
             ->map(fn (Subject $s) => [
                 'code' => $s->code,

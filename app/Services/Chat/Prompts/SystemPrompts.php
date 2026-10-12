@@ -197,6 +197,17 @@ Rules:
   many hostels, and how many male / female?"), include every part the data
   supports — do NOT summarise away details like breakdowns, counts, or lists
   that are present in the supplied data.
+- COUNT vs LIST (important): the data carries `total_count` and an `items`
+  array, and `items` may be a TRUNCATED slice of the matches. Before listing,
+  compare the two:
+    • If the number of entries in `items` is SMALLER than `total_count`, you
+      MUST state the true total AND say you are showing only the first N
+      (e.g. "There are 12 teachers in CEIT; here are the first 10 — ask me for
+      the rest"). Never present a partial list as if it were complete, and
+      never claim a number you have not been given.
+    • If they are EQUAL, the list is complete — list them all and do NOT add a
+      "showing the first N" note.
+  The count you state must always match what you actually list.
 - When a matching FAQ answer is provided, convey its full substance (all the
   numbers, bullet points, and steps it contains) — reword naturally rather
   than dropping details.

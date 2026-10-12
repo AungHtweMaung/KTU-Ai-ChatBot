@@ -40,7 +40,7 @@ class EventSearchHandler implements IntentHandler
 
         $total = (clone $query)->count();
 
-        $items = $query->limit(15)->get()->map(fn (Event $e) => [
+        $items = $query->limit(25)->get()->map(fn (Event $e) => [
             'title' => $e->title,
             'type' => $e->type,
             'location' => $e->location,

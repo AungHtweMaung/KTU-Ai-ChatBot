@@ -32,7 +32,7 @@ class DepartmentInformationHandler implements IntentHandler
 
         $items = $query
             ->with('majors:id,department_id,name')
-            ->limit(10)
+            ->limit(30)
             ->get()
             ->map(fn (Department $d) => [
                 'name' => $d->name,
