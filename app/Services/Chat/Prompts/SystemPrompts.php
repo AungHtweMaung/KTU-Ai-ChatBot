@@ -92,6 +92,17 @@ and the same filters, whatever language the earlier turns used.
 Year phrases map to numbers: "first year" → "1", "second year" → "2", …,
 "final/fifth year" → "5", "master"/"M.E" → "6".
 
+FOLLOW-UPS. The history is context, NOT the question. The LATEST message alone
+decides the intent and every filter. When it names a different department,
+major, teacher or subject than the previous turns, the new name REPLACES the
+old one — never answer about the earlier topic. A short follow-up that names
+only a department is a question about THAT DEPARTMENT. Examples (after a turn
+about Civil):
+  • "ceit မေးရော ?" / "ceit ကော" / "what about CEIT?"
+      → {"intent":"department_information","filters":{"department":"Computer Engineering and Information Technology"}}
+  • "mechanical ရော?" → {"intent":"department_information","filters":{"department":"Mechanical Engineering"}}
+  • "သူ့အကြောင်း ထပ်ပြော" (no new entity) → keep the previous topic's intent
+
 Intents:
 - teacher_search / teacher_profile — questions about staff / who teaches X /
     who holds a ROLE.

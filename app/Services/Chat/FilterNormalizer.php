@@ -117,18 +117,7 @@ class FilterNormalizer
                 continue;
             }
 
-            $translated = $this->translate($value);
-
-            if ($translated === null) {
-                // Untranslatable Myanmar text can never match an English
-                // column — keeping it guarantees zero rows. Dropping it
-                // degrades gracefully to the unfiltered result, which the
-                // answer layer can still present usefully.
-                unset($filters[$key]);
-                continue;
-            }
-
-            $filters[$key] = $translated;
+            $filters[$key] = $this->translate($value);
         }
 
         return $filters;
@@ -137,10 +126,11 @@ class FilterNormalizer
     /**
      * Translate a single value.
      *
-     * @return string|null  English value, or null when the value is Myanmar
-     *                      text with no known mapping.
+     * NEVER returns null — an unmapped value is passed through unchanged.
+     * See the note on {@see latinResidue()} for why dropping it would be
+     * worse than keeping it.
      */
-    private function translate(string $value): ?string
+    private function translate(string $value): string
     {
         $value = trim($value);
 
@@ -156,7 +146,42 @@ class FilterNormalizer
             }
         }
 
-        return null;
+        // Mixed script: the user (or the NLU) wrote the English name with a
+        // Myanmar suffix or particle attached — "CEIT ဌာန", "Civil ဌာနမှာ".
+        // The English part is the real filter; the Myanmar part is grammar.
+        $latin = $this->latinResidue($value);
+
+        if ($latin !== '') {
+            return $latin;
+        }
+
+        // Pure Myanmar with no known mapping. Keep it.
+        //
+        // Dropping it would look "graceful" but is actively dangerous: the
+        // handler would then run with NO filter at all and cheerfully return
+        // every row — asking about "ceit ဌာန" would list the whole staff of
+        // 116 teachers as if that were the answer. An unmatchable value
+        // instead yields an honest empty result, which the answer layer
+        // already turns into "no information found — contact the office".
+        return $value;
+    }
+
+    /**
+     * The Latin-script part of a mixed-script value, with Myanmar characters
+     * and punctuation removed ("CEIT ဌာန" → "CEIT"). Empty for pure Myanmar.
+     */
+    private function latinResidue(string $value): string
+    {
+        // Myanmar block, plus the Myanmar Extended-A/B blocks.
+        $stripped = preg_replace(
+            '/[\x{1000}-\x{109F}\x{A9E0}-\x{A9FF}\x{AA60}-\x{AA7F}]+/u',
+            ' ',
+            $value,
+        );
+
+        $stripped = preg_replace('/[^\p{L}\p{N}]+/u', ' ', (string) $stripped);
+
+        return trim((string) $stripped);
     }
 
     /** Does the string contain any character in the Myanmar Unicode block? */
